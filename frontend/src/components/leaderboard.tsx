@@ -8,15 +8,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 import { useState } from "react";
 import axios from "axios";
@@ -89,69 +80,99 @@ function Leaderboard() {
           </Table>
 
           <div className="mt-3">
-            <Pagination>
-              <PaginationContent className="flex justify-center gap-1">
-                <PaginationItem>
-                  <PaginationPrevious
-                    className={`h-8 w-8 text-xs ${
-                      startIndex === 0
-                        ? "pointer-events-none opacity-50"
-                        : "hover:bg-blue-100"
-                    }`}
-                    onClick={() => {
-                      setStartIndex(startIndex - rowsPerPage);
-                      setEndIndex(endIndex - rowsPerPage);
-                    }}
+            <div className="flex justify-center items-center gap-1">
+              {/* Previous Button */}
+              <button
+                className={`h-8 w-8 flex items-center justify-center rounded border text-xs ${
+                  startIndex === 0
+                    ? "opacity-50 cursor-not-allowed text-gray-400"
+                    : "hover:bg-blue-100 text-gray-600 hover:text-blue-600"
+                }`}
+                onClick={() => {
+                  if (startIndex > 0) {
+                    setStartIndex(startIndex - rowsPerPage);
+                    setEndIndex(endIndex - rowsPerPage);
+                  }
+                }}
+                disabled={startIndex === 0}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
                   />
-                </PaginationItem>
+                </svg>
+              </button>
 
-                <PaginationItem>
-                  <PaginationLink
-                    className={`h-8 w-8 text-xs ${
-                      startIndex === 0
-                        ? "bg-blue-500 text-white"
-                        : "hover:bg-blue-100"
-                    }`}
-                    onClick={() => {
-                      setStartIndex(0);
-                      setEndIndex(10);
-                    }}
-                  >
-                    1
-                  </PaginationLink>
-                </PaginationItem>
+              {/* Page Numbers */}
+              <button
+                className={`h-8 w-8 flex items-center justify-center rounded border text-xs ${
+                  startIndex === 0
+                    ? "bg-blue-500 text-white"
+                    : "hover:bg-blue-100 text-gray-600"
+                }`}
+                onClick={() => {
+                  setStartIndex(0);
+                  setEndIndex(10);
+                }}
+              >
+                1
+              </button>
 
-                <PaginationItem>
-                  <PaginationLink
-                    className={`h-8 w-8 text-xs ${
-                      startIndex === 10
-                        ? "bg-blue-500 text-white"
-                        : "hover:bg-blue-100"
-                    }`}
-                    onClick={() => {
-                      setStartIndex(10);
-                      setEndIndex(20);
-                    }}
-                  >
-                    2
-                  </PaginationLink>
-                </PaginationItem>
+              <button
+                className={`h-8 w-8 flex items-center justify-center rounded border text-xs ${
+                  startIndex === 10
+                    ? "bg-blue-500 text-white"
+                    : "hover:bg-blue-100 text-gray-600"
+                }`}
+                onClick={() => {
+                  setStartIndex(10);
+                  setEndIndex(20);
+                }}
+              >
+                2
+              </button>
 
-                <PaginationItem>
-                  <PaginationNext
-                    className={`h-8 w-8 text-xs ${
-                      endIndex >= data?.length
-                        ? "pointer-events-none opacity-50"
-                        : "hover:bg-blue-100"
-                    }`}
-                    onClick={() => {
-                      setStartIndex(startIndex + rowsPerPage);
-                      setEndIndex(endIndex + rowsPerPage);
-                    }}
+              {/* Ellipsis */}
+              <span className="text-gray-400 text-xs px-1">...</span>
+
+              {/* Next Button */}
+              <button
+                className={`h-8 w-8 flex items-center justify-center rounded border text-xs ${
+                  endIndex >= (data?.length || 0)
+                    ? "opacity-50 cursor-not-allowed text-gray-400"
+                    : "hover:bg-blue-100 text-gray-600 hover:text-blue-600"
+                }`}
+                onClick={() => {
+                  if (endIndex < (data?.length || 0)) {
+                    setStartIndex(startIndex + rowsPerPage);
+                    setEndIndex(endIndex + rowsPerPage);
+                  }
+                }}
+                disabled={endIndex >= (data?.length || 0)}
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
                   />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+                </svg>
+              </button>
+            </div>
           </div>
         </>
       )}
