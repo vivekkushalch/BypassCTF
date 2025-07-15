@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   passwordLevels,
   initialGameState,
@@ -16,10 +16,6 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const [gameState, setGameState] = useState<GameState>(initialGameState);
   const [showQuestionAnimation, setShowQuestionAnimation] = useState(false);
-
-  const currentLevelData = passwordLevels.find(
-    (level) => level.level === gameState.currentLevel
-  );
 
   const handleBitQuestion = (answer: boolean) => {
     if (answer) {
@@ -38,11 +34,6 @@ export default function Home() {
     }
   };
 
-  const checkPassword = () => {
-    if (!currentLevelData) return false;
-    return currentLevelData.validator(password);
-  };
-
   const handlePasswordChange = (newPassword: string) => {
     setPassword(newPassword);
 
@@ -55,39 +46,34 @@ export default function Home() {
       if (isValid) {
         newPassedLevels.push(levelData.level);
       } else {
-        // Only add to failed levels if it was previously passed
-        if (gameState.passedLevels.includes(levelData.level)) {
+        // Add to failed levels if it's at or below the highest reached level
+        if (levelData.level <= gameState.currentLevel) {
           newFailedLevels.push(levelData.level);
         }
       }
     });
 
-    // Find the current level
+    // Find the current level (highest consecutive passed level + 1)
     let currentLevel = 1;
-
-    // If there are failed levels, current level is the lowest failed level
-    if (newFailedLevels.length > 0) {
-      currentLevel = Math.min(...newFailedLevels);
-    } else {
-      // Otherwise, current level is the first unpassed level
-      for (let i = 1; i <= passwordLevels.length; i++) {
-        if (!newPassedLevels.includes(i)) {
-          currentLevel = i;
-          break;
-        }
+    for (let i = 1; i <= passwordLevels.length; i++) {
+      if (newPassedLevels.includes(i)) {
+        currentLevel = i + 1;
+      } else {
+        break;
       }
     }
 
+    // Remember the highest level reached (never goes backward)
+    const highestReached = Math.max(gameState.currentLevel, currentLevel);
+
     // If all levels are passed, we're complete
-    if (newPassedLevels.length === passwordLevels.length) {
-      currentLevel = passwordLevels.length;
-    }
+    const isComplete = newPassedLevels.length === passwordLevels.length;
 
     setGameState({
-      currentLevel,
+      currentLevel: highestReached,
       passedLevels: newPassedLevels,
       failedLevels: newFailedLevels,
-      isComplete: newPassedLevels.length === passwordLevels.length,
+      isComplete,
     });
   };
 
@@ -105,8 +91,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      <div className="bg-black/50 backdrop-blur-sm rounded-lg p-8 w-full max-w-2xl border border-gray-700">
+    <div className="min-h-screen bg-white text-black">
+      <div className="max-w-2xl mx-auto p-8">
         {step === "question" && (
           <div
             className={`transition-all duration-500 ${
@@ -115,30 +101,35 @@ export default function Home() {
                 : "opacity-100 scale-100"
             }`}
           >
-            <h1 className="text-2xl font-bold text-white mb-6 text-center">
-              Are you from BIT?
+            <h1 className="text-4xl font-bold text-center mb-8">
+              🔒 The Password Game
             </h1>
-            <div className="flex gap-4 justify-center">
-              <Button
-                onClick={() => handleBitQuestion(true)}
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-2"
-              >
-                Yes
-              </Button>
-              <Button
-                onClick={() => handleBitQuestion(false)}
-                variant="destructive"
-                className="px-8 py-2"
-              >
-                No
-              </Button>
+            <div className="text-center mb-8">
+              <p className="text-xl mb-6">Are you from BIT?</p>
+              <div className="flex gap-4 justify-center">
+                <Button
+                  onClick={() => handleBitQuestion(true)}
+                  className="bg-green-500 hover:bg-green-600 text-white px-8 py-3 text-lg"
+                >
+                  Yes
+                </Button>
+                <Button
+                  onClick={() => handleBitQuestion(false)}
+                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 text-lg"
+                >
+                  No
+                </Button>
+              </div>
             </div>
           </div>
         )}
 
         {step === "username" && (
           <div className="animate-fadeIn">
-            <h2 className="text-xl font-semibold text-white mb-4 text-center">
+            <h1 className="text-4xl font-bold text-center mb-8">
+              🔒 The Password Game
+            </h1>
+            <h2 className="text-2xl font-semibold text-center mb-6">
               Enter your username
             </h2>
             <div className="space-y-4">
@@ -147,14 +138,14 @@ export default function Home() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Username..."
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:border-blue-500"
                 onKeyPress={(e) => e.key === "Enter" && handleUsernameSubmit()}
                 autoFocus
               />
               <Button
                 onClick={handleUsernameSubmit}
                 disabled={!username.trim()}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white py-4 text-lg"
               >
                 Continue
               </Button>
@@ -164,141 +155,176 @@ export default function Home() {
 
         {step === "password" && (
           <div className="animate-fadeIn">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-white mb-2 text-center">
-                Hello, {username}!
-              </h2>
-              <p className="text-gray-300 text-center mb-4">
-                Complete all password levels to proceed
-              </p>
+            <h1 className="text-4xl font-bold text-center mb-4">
+              🔒 The Password Game
+            </h1>
+            <p className="text-center text-gray-600 mb-8">
+              Please choose a password
+            </p>
 
-              {/* Level Progress */}
-              <div className="flex gap-2 justify-center mb-4">
-                {passwordLevels.map((level) => (
-                  <div
-                    key={level.level}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
-                      ${
-                        gameState.passedLevels.includes(level.level)
-                          ? "bg-green-500 text-white"
-                          : level.level === gameState.currentLevel
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-600 text-gray-300"
-                      }`}
-                  >
-                    {level.level}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="relative">
                 <input
                   type="text"
                   value={password}
                   onChange={(e) => handlePasswordChange(e.target.value)}
                   placeholder="Enter your password..."
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  onKeyPress={(e) =>
-                    e.key === "Enter" && handlePasswordSubmit()
-                  }
+                  className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:border-blue-500"
                   autoFocus
                 />
+                <div className="text-right text-sm text-gray-500 mt-1">
+                  {password.length} characters
+                </div>
               </div>
 
-              {/* Current Level Requirements */}
-              {currentLevelData && (
-                <div className="border border-gray-600 rounded-lg p-4">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold
-                      ${
-                        checkPassword() ? "bg-green-500" : "bg-red-500"
-                      } text-white`}
-                    >
-                      {currentLevelData.level}
-                    </div>
-                    <div className="flex-1">
-                      <p
-                        className={`text-sm ${
-                          checkPassword() ? "text-green-400" : "text-red-400"
+              {/* Display rules: Current (highest reached) -> Failed -> Passed */}
+              <div className="space-y-4">
+                {/* 1. Current Level First - Always show highest reached level */}
+                {gameState.currentLevel <= passwordLevels.length && (
+                  <div
+                    className={`border-2 rounded-lg p-4 transition-all duration-300 animate-slideIn ${
+                      gameState.passedLevels.includes(gameState.currentLevel) &&
+                      !gameState.failedLevels.includes(gameState.currentLevel)
+                        ? "border-green-500 bg-green-50"
+                        : gameState.failedLevels.includes(
+                            gameState.currentLevel
+                          )
+                        ? "border-red-500 bg-red-50"
+                        : "border-blue-500 bg-blue-50"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                          gameState.passedLevels.includes(
+                            gameState.currentLevel
+                          ) &&
+                          !gameState.failedLevels.includes(
+                            gameState.currentLevel
+                          )
+                            ? "bg-green-500 text-white"
+                            : gameState.failedLevels.includes(
+                                gameState.currentLevel
+                              )
+                            ? "bg-red-500 text-white"
+                            : "bg-blue-500 text-white"
                         }`}
                       >
-                        {currentLevelData.description}
-                      </p>
+                        {gameState.passedLevels.includes(
+                          gameState.currentLevel
+                        ) &&
+                        !gameState.failedLevels.includes(gameState.currentLevel)
+                          ? "✓"
+                          : gameState.currentLevel}
+                      </div>
+                      <div className="flex-1">
+                        {(() => {
+                          const currentLevelData = passwordLevels.find(
+                            (l) => l.level === gameState.currentLevel
+                          );
+                          if (!currentLevelData) return null;
 
-                      {/* Level-specific extras */}
-                      {currentLevelData.extras?.map((extra, index) => (
-                        <div
-                          key={index}
-                          className="mt-2 p-2 bg-gray-800 rounded text-xs text-gray-300"
-                        >
-                          <strong className="text-blue-400">
-                            {extra.title}:
-                          </strong>{" "}
-                          {extra.content}
-                        </div>
-                      ))}
+                          return (
+                            <>
+                              <p
+                                className={`font-medium ${
+                                  gameState.passedLevels.includes(
+                                    gameState.currentLevel
+                                  ) &&
+                                  !gameState.failedLevels.includes(
+                                    gameState.currentLevel
+                                  )
+                                    ? "text-green-700"
+                                    : gameState.failedLevels.includes(
+                                        gameState.currentLevel
+                                      )
+                                    ? "text-red-700"
+                                    : "text-blue-700"
+                                }`}
+                              >
+                                Rule {gameState.currentLevel}:{" "}
+                                {currentLevelData.description}
+                              </p>
 
-                      {/* Special display for level 4 digit sum */}
-                      {currentLevelData.level === 4 && password && (
-                        <div className="mt-2 p-2 bg-gray-800 rounded text-xs text-gray-300">
-                          <strong className="text-blue-400">
-                            Current digit sum:
-                          </strong>{" "}
-                          {getDigitSum(password)} / 25
-                        </div>
-                      )}
+                              {/* Level-specific extras */}
+                              {currentLevelData.extras?.map((extra, index) => (
+                                <div
+                                  key={index}
+                                  className="mt-2 p-2 bg-white rounded text-sm text-gray-600 border"
+                                >
+                                  <strong>{extra.title}:</strong>{" "}
+                                  {extra.content}
+                                </div>
+                              ))}
+
+                              {/* Special displays */}
+                              {currentLevelData.level === 5 && password && (
+                                <div className="mt-2 p-2 bg-white rounded text-sm text-gray-600 border">
+                                  <strong>Current digit sum:</strong>{" "}
+                                  {getDigitSum(password)} / 25
+                                </div>
+                              )}
+
+                              {currentLevelData.level === 12 && password && (
+                                <div className="mt-2 p-2 bg-white rounded text-sm text-gray-600 border">
+                                  <strong>Current password length:</strong>{" "}
+                                  {password.length}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Failed Levels (Show all failed levels including current if it's failing) */}
-              {gameState.failedLevels.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-red-400">
-                    ❌ Failed Levels (need to fix):
-                  </h3>
-                  {gameState.failedLevels.map((levelNum) => {
-                    const levelData = passwordLevels.find(
+                {/* 2. Failed Levels Section - Exclude current level */}
+                {gameState.failedLevels
+                  .filter((levelNum) => levelNum !== gameState.currentLevel)
+                  .sort((a, b) => a - b)
+                  .map((levelNum) => {
+                    const level = passwordLevels.find(
                       (l) => l.level === levelNum
                     );
+                    if (!level) return null;
+
                     return (
                       <div
-                        key={levelNum}
-                        className="border border-red-600 rounded-lg p-4 bg-red-900/20"
+                        key={level.level}
+                        className="border-2 rounded-lg p-4 transition-all duration-300 border-red-500 bg-red-50"
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-sm font-bold">
-                            {levelNum}
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 bg-red-500 text-white">
+                            {level.level}
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm text-red-300">
-                              {levelData?.description}
+                            <p className="font-medium text-red-700">
+                              Rule {level.level}: {level.description}
                             </p>
 
-                            {/* Level-specific extras for failed levels */}
-                            {levelData?.extras?.map((extra, index) => (
+                            {/* Level-specific extras */}
+                            {level.extras?.map((extra, index) => (
                               <div
                                 key={index}
-                                className="mt-2 p-2 bg-gray-800 rounded text-xs text-gray-300"
+                                className="mt-2 p-2 bg-white rounded text-sm text-gray-600 border"
                               >
-                                <strong className="text-blue-400">
-                                  {extra.title}:
-                                </strong>{" "}
-                                {extra.content}
+                                <strong>{extra.title}:</strong> {extra.content}
                               </div>
                             ))}
 
-                            {/* Special display for level 4 digit sum in failed levels */}
-                            {levelData?.level === 4 && password && (
-                              <div className="mt-2 p-2 bg-gray-800 rounded text-xs text-gray-300">
-                                <strong className="text-blue-400">
-                                  Current digit sum:
-                                </strong>{" "}
+                            {/* Special displays */}
+                            {level.level === 5 && password && (
+                              <div className="mt-2 p-2 bg-white rounded text-sm text-gray-600 border">
+                                <strong>Current digit sum:</strong>{" "}
                                 {getDigitSum(password)} / 25
+                              </div>
+                            )}
+
+                            {level.level === 12 && password && (
+                              <div className="mt-2 p-2 bg-white rounded text-sm text-gray-600 border">
+                                <strong>Current password length:</strong>{" "}
+                                {password.length}
                               </div>
                             )}
                           </div>
@@ -306,48 +332,79 @@ export default function Home() {
                       </div>
                     );
                   })}
-                </div>
-              )}
 
-              {/* Passed Levels */}
-              {gameState.passedLevels.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-green-400">
-                    ✅ Completed Levels:
-                  </h3>
-                  {gameState.passedLevels.map((levelNum) => {
-                    const levelData = passwordLevels.find(
+                {/* 3. Passed Levels Section - Exclude current level */}
+                {gameState.passedLevels
+                  .filter(
+                    (levelNum) =>
+                      !gameState.failedLevels.includes(levelNum) &&
+                      levelNum !== gameState.currentLevel &&
+                      levelNum < gameState.currentLevel
+                  )
+                  .sort((a, b) => a - b)
+                  .map((levelNum) => {
+                    const level = passwordLevels.find(
                       (l) => l.level === levelNum
                     );
+                    if (!level) return null;
+
                     return (
                       <div
-                        key={levelNum}
-                        className="border border-green-600 rounded-lg p-3 bg-green-900/20"
+                        key={level.level}
+                        className="border-2 rounded-lg p-4 transition-all duration-300 border-green-500 bg-green-50"
                       >
-                        <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold">
-                            {levelNum}
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 bg-green-500 text-white">
+                            ✓
                           </div>
-                          <p className="text-xs text-green-300">
-                            {levelData?.description}
-                          </p>
+                          <div className="flex-1">
+                            <p className="font-medium text-green-700">
+                              Rule {level.level}: {level.description}
+                            </p>
+
+                            {/* Level-specific extras */}
+                            {level.extras?.map((extra, index) => (
+                              <div
+                                key={index}
+                                className="mt-2 p-2 bg-white rounded text-sm text-gray-600 border"
+                              >
+                                <strong>{extra.title}:</strong> {extra.content}
+                              </div>
+                            ))}
+
+                            {/* Special displays */}
+                            {level.level === 5 && password && (
+                              <div className="mt-2 p-2 bg-white rounded text-sm text-gray-600 border">
+                                <strong>Current digit sum:</strong>{" "}
+                                {getDigitSum(password)} / 25
+                              </div>
+                            )}
+
+                            {level.level === 12 && password && (
+                              <div className="mt-2 p-2 bg-white rounded text-sm text-gray-600 border">
+                                <strong>Current password length:</strong>{" "}
+                                {password.length}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
                   })}
-                </div>
-              )}
+              </div>
 
               {gameState.isComplete ? (
-                <Button
-                  onClick={handlePasswordSubmit}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3"
-                >
-                  🎉 Complete Challenge! 🎉
-                </Button>
+                <div className="text-center">
+                  <Button
+                    onClick={handlePasswordSubmit}
+                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 text-lg"
+                  >
+                    🎉 You win! 🎉
+                  </Button>
+                </div>
               ) : (
-                <div className="text-center text-gray-400 text-sm py-2">
-                  Complete Level {gameState.currentLevel} to continue...
+                <div className="text-center text-gray-500 text-sm py-2">
+                  Complete all rules to win the game!
                 </div>
               )}
             </div>
