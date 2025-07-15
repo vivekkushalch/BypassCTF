@@ -20,8 +20,9 @@ import {
 } from "@/components/ui/pagination";
 
 import { useState } from "react";
-import axios from "axios";
-import { useQuery } from "@tanstack/react-query";
+// import axios from "axios";
+// import { useQuery } from "@tanstack/react-query";
+import useGetUserDataHook from "@/hooks/useGetUserDataHook";
 
 
 function Leaderboard(){
@@ -29,27 +30,7 @@ function Leaderboard(){
     const [startIndex, setStartIndex] = useState(0);
     const [endIndex, setEndIndex] = useState(rowsPerPage);
 
-    const getData = async () => {
-        try {
-            // backend url
-            const response = await axios.get(
-                "https://jsonplaceholder.typicode.com/posts"
-            );
-            const data = response.data;
-            // console.log(data);
-            return data
-            
-        } catch (error) {
-            console.log("error while fetching response : ", error);
-            return []
-        }
-    };
-
-    const { data, isLoading } = useQuery({
-        queryKey: ["leaderBoardData"],
-        queryFn: getData,
-        refetchInterval: 5000
-    })
+    const {data, isLoading} = useGetUserDataHook()
 
     return (
         <div>
