@@ -94,7 +94,8 @@ async def register_user(user_registration: UserRegistration):
     user_data = {
         "current_level": {
             "level": 1,
-            "desc": "",
+            "name": "Level 1",
+            "description": level_manager.get_level_info(1).get("description", "") if level_manager.get_level_info(1) else "",
             "extras": {}
         },
         "failed_levels": [],
@@ -216,9 +217,15 @@ async def submit_password(submit_data: PasswordSubmit):
     
     # Update user's current level from the response
     if result["current_level"] > current_level:
-        user_data["current_level"]["level"] = result["current_level"]
-        if "extras" not in user_data["current_level"]:
-            user_data["current_level"]["extras"] = {}
+        new_level = result["current_level"]
+        level_info = level_manager.get_level_info(new_level) or {}
+        
+        user_data["current_level"].update({
+            "level": new_level,
+            "name": f"Level {new_level}",
+            "description": level_info.get("description", ""),
+            "extras": user_data["current_level"].get("extras", {})
+        })
         user_data["current_level"]["extras"]["last_passed"] = datetime.now().isoformat()
         
         # If we have a score update for the current level, store it
@@ -242,6 +249,17 @@ async def submit_password(submit_data: PasswordSubmit):
     # Calculate rank and total users
     rank = calculate_rank(user_id, db)
     total_users = len(db)
+    
+    # Ensure current level has all required fields
+    current_level_num = user_data["current_level"]["level"]
+    level_info = level_manager.get_level_info(current_level_num) or {}
+    
+    # Update current level with latest info
+    user_data["current_level"].update({
+        "name": f"Level {current_level_num}",
+        "description": level_info.get("description", ""),
+        "level": current_level_num
+    })
     
     # Prepare response
     response = {
