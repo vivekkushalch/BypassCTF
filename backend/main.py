@@ -1,0 +1,263 @@
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from datetime import datetime, timedelta
+import json
+from typing import Optional, Dict, Any, List
+from pydantic import BaseModel
+import jwt
+import secrets
+import time
+from level_manager import level_manager
+from user_scorecard import scorecard_manager
+
+app = FastAPI(title="User Registration API")
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+DB_FILE = "db.json"
+JWT_SECRET = "your-secret-key-here"  # In production, use environment variable
+JWT_ALGORITHM = "HS256"
+
+# JWT Token model
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    user_id: Optional[str] = None
+
+# Pydantic models
+class UserRegistration(BaseModel):
+    user_id: str
+
+class UserResponse(BaseModel):
+    user_id: str
+    current_level: dict
+    failed_levels: list
+    passed_levels: list
+    registered_at: str
+    auth_token: str
+
+# Helper functions
+def get_db():
+    try:
+        with open(DB_FILE, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+def save_db(data):
+    with open(DB_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def create_access_token(user_id: str) -> str:
+    """Create JWT token with user_id"""
+    expires_delta = timedelta(days=7)
+    expire = datetime.utcnow() + expires_delta
+    to_encode = {"sub": user_id, "exp": expire}
+    return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def verify_token(token: str) -> Dict[str, Any]:
+    """Verify JWT token and return payload"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+@app.get("/")
+async def home():
+    """Home endpoint"""
+    return {"message": "Welcome to the User Registration API"}
+
+@app.post("/register", response_model=UserResponse)
+async def register_user(user_registration: UserRegistration):
+    """Register a new user or get existing user data"""
+    db = get_db()
+    
+    if user_registration.user_id in db:
+        raise HTTPException(status_code=400, detail="User already exists")
+    
+    # Create user data with defaults
+    user_data = {
+        "current_level": {
+            "level": 1,
+            "desc": "",
+            "extras": {}
+        },
+        "failed_levels": [],
+        "passed_levels": [],
+        "registered_at": datetime.now().isoformat()
+    }
+    
+    # Generate JWT
+    access_token = create_access_token(user_registration.user_id)
+    
+    # Initialize level tries
+    user_data["level_tries"] = {1: 0, 2: 0, 3: 0}  # Initialize tries for all levels
+    
+    # Save to database
+    db[user_registration.user_id] = user_data
+    save_db(db)
+    
+    return {
+        "user_id": user_registration.user_id,
+        "current_level": user_data["current_level"],
+        "failed_levels": user_data["failed_levels"],
+        "passed_levels": user_data["passed_levels"],
+        "registered_at": user_data["registered_at"],
+        "auth_token": access_token,
+        "token_type": "bearer"
+    }
+
+# Request models
+class PasswordSubmit(BaseModel):
+    auth_token: str
+    password: str
+
+def calculate_rank(user_id: str, db: dict) -> int:
+    """Calculate the user's rank based on their score"""
+    # Get all users with their highest level and total tries
+    users = []
+    for uid, data in db.items():
+        try:
+            level = data["current_level"]["level"]
+            tries = sum(data.get("level_tries", {}).values())
+            # Higher level first, then fewer tries
+            users.append({"user_id": uid, "level": level, "tries": tries})
+        except (KeyError, AttributeError):
+            continue
+    
+    # Sort by level (descending) and tries (ascending)
+    sorted_users = sorted(users, key=lambda x: (-x["level"], x["tries"]))
+    
+    # Find the rank (1-based index)
+    for i, user in enumerate(sorted_users, 1):
+        if user["user_id"] == user_id:
+            return i
+    return len(users) + 1  # If not found, put at the end
+
+class LevelScore(BaseModel):
+    level: int
+    completed_at: Optional[str]
+    tries: int
+    score: float
+
+class SubmitResponse(BaseModel):
+    user_id: str
+    current_level: dict
+    passed_levels: list
+    failed_levels: list
+    scorecard: List[LevelScore]
+    total_score: float
+    rank: int
+    total_users: int
+    message: str
+
+@app.post("/submit", response_model=SubmitResponse)
+async def submit_password(submit_data: PasswordSubmit):
+    """
+    Submit a password for the current level.
+    
+    - Verifies the JWT token
+    - Validates the password against current level
+    - Updates user progress and scores
+    - Returns user data with ranking and scorecard
+    """
+    # Verify token
+    try:
+        payload = verify_token(submit_data.auth_token)
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Invalid token")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+    # Get user data
+    db = get_db()
+    if user_id not in db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_data = db[user_id]
+    current_level = user_data["current_level"]["level"]
+    
+    # Verify password against levels
+    result = level_manager.verify_password(user_id, submit_data.password, current_level)
+    
+    # Update user data based on verification
+    # Get the newly passed levels from this attempt
+    newly_passed = result.get("newly_passed", [])
+    
+    # Update passed_levels with all passed levels (including previously passed)
+    user_data["passed_levels"] = result["passed"]
+    user_data["failed_levels"] = result["failed"]
+    
+    # Track if the current level was passed in this attempt
+    current_level_passed = current_level in newly_passed
+    
+    # Calculate score for this attempt
+    # Get the latest score update for the current level if any
+    current_level_score = next(
+        (update for update in result.get("score_updates", []) if update["level"] == current_level),
+        None
+    )
+    
+    # Update user's current level from the response
+    if result["current_level"] > current_level:
+        user_data["current_level"]["level"] = result["current_level"]
+        if "extras" not in user_data["current_level"]:
+            user_data["current_level"]["extras"] = {}
+        user_data["current_level"]["extras"]["last_passed"] = datetime.now().isoformat()
+        
+        # If we have a score update for the current level, store it
+        if current_level_score:
+            user_data["current_level"]["extras"]["score"] = current_level_score["score"]
+    
+    # Update score if we have a score update for this level
+    if current_level_score:
+        if "level_scores" not in user_data:
+            user_data["level_scores"] = {}
+        user_data["level_scores"][str(current_level)] = current_level_score["score"]
+    
+    # Save updated user data
+    db[user_id] = user_data
+    save_db(db)
+    
+    # Get the complete scorecard from the result
+    scorecard = result.get("scorecard", [])
+    total_score = sum(entry.get("score", 0) for entry in scorecard)
+    
+    # Calculate rank and total users
+    rank = calculate_rank(user_id, db)
+    total_users = len(db)
+    
+    # Prepare response
+    response = {
+        "user_id": user_id,
+        "current_level": user_data["current_level"],
+        "passed_levels": user_data["passed_levels"],
+        "failed_levels": user_data["failed_levels"],
+        "scorecard": scorecard,
+        "total_score": total_score,
+        "rank": rank,
+        "total_users": total_users,
+        "message": "Password verified successfully" if result.get("passed") else "Password verification failed"
+    }
+    
+    return response
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
