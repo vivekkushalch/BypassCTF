@@ -13,7 +13,19 @@ class BaseLevel(ABC):
     Each level should extend this class and implement the required methods.
     The level_state is stored in the user's data and passed to is_valid()
     when validating passwords.
+    
+    Child classes should call super().__init__() with level_id and level_desc.
     """
+    
+    def __init__(self, level_id: int = 0, level_desc: str = ""):
+        """Initialize the level with its ID and description.
+        
+        Args:
+            level_id: The unique identifier for the level
+            level_desc: Description of the level shown to the user
+        """
+        self.level_id = level_id
+        self.level_desc = level_desc
     
     @abstractmethod
     def is_valid(self, password: str, level_state: Dict[str, Any]) -> bool:
@@ -28,17 +40,13 @@ class BaseLevel(ABC):
         """
         pass
     
-    @abstractmethod
     def start(self) -> Dict[str, Any]:
-        """Initialize the level and return its metadata and initial state.
+        """Initialize the level and return its initial state.
         
         Returns:
-            Dict containing:
-                - level_id: int - The unique identifier for the level
-                - level_desc: str - Description of the level
-                - level_state: Dict - Initial state data for the level
+            Dict containing the initial level state
         """
-        pass
+        return {}
     
     def get_level_state(self, user_data: Dict[str, Any], level_id: int) -> Dict[str, Any]:
         """Get the level state for a specific user and level.
@@ -54,6 +62,6 @@ class BaseLevel(ABC):
             user_data["level_states"] = {}
         if str(level_id) not in user_data["level_states"]:
             # Initialize level state if it doesn't exist
-            level_data = self.start()
+            level_data = self.start(self)
             user_data["level_states"][str(level_id)] = level_data["level_state"]
         return user_data["level_states"].get(str(level_id), {})

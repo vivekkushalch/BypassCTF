@@ -6,6 +6,12 @@ This level checks if the password matches a specific string.
 from .base_level import BaseLevel
 
 class Level1(BaseLevel):
+    def __init__(self):
+        super().__init__(
+            level_id=1,
+            level_desc="Enter the correct password to proceed.",
+        )
+    
     def is_valid(self, password: str, level_state: dict) -> bool:
         """
         Check if the password is correct for level 1.
@@ -17,21 +23,12 @@ class Level1(BaseLevel):
         Returns:
             bool: True if password is correct, False otherwise
         """
-
         return password == "welcome123"
-    
-    def start(self) -> dict:
-        """
-        Initialize the level and return its metadata and initial state.
-        
-        Returns:
-            Dict containing level metadata and initial state
-        """
-        return {
-            "level_id": 1,
-            "level_desc": "Enter the correct password to proceed.",
-            "level_state": {}  # No state needed for this simple level
-        }
 
+    def start(self):
+        return {
+                "level_state":{},
+            "level_extras": {}            
+        }
 # Create a singleton instance of the level
 level = Level1()
