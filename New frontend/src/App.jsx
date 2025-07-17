@@ -9,17 +9,24 @@ function App() {
   const [answered, setAnswered] = useState(false);
   const [isFromBIT, setIsFromBIT] = useState(null);
   const [user_id, setUsername] = useState("");
+  const [authToken, setAuthToken] = useState(null);
+
+  const BACKEND_URL = "http://localhost:8000";
 
   const registerMutation = useMutation({
     mutationFn: (user_id) =>
       axios.post(
-        "https://bypass-crjv.onrender.com/register",
+        `${BACKEND_URL}/register`,
         { user_id },
         { withCredentials: false }
       ),
     onSuccess: (res) => {
       const userData = res.data;
+      const token = userData.auth_token;
       localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("authToken", token);
+      setAuthToken(token);
+
       setIsRegistered(true);
     },
     onError: () => {
@@ -29,8 +36,13 @@ function App() {
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
-    if (savedUser) {
+    const savedToken = localStorage.getItem("authToken");
+
+    if (savedUser && savedToken) {
       setIsRegistered(true);
+      setAuthToken(savedToken);
+      setAnswered(true);
+      setIsFromBIT(true);
     }
   }, []);
 
@@ -97,7 +109,7 @@ function App() {
         </form>
       ) : (
         // ✅ Show password input box here after user is registered
-        <Password />
+        <Password authToken={authToken} />
       )}
     </div>
   );
