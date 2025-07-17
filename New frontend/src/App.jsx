@@ -4,14 +4,13 @@ import axios from "axios";
 import Navbar from "./components/Navbar";
 import Password from "./components/PasswordField";
 
+export const BACKEND_URL = "https://bypass-crjv.onrender.com";
 function App() {
   const [isRegistered, setIsRegistered] = useState(false);
   const [answered, setAnswered] = useState(false);
   const [isFromBIT, setIsFromBIT] = useState(null);
   const [user_id, setUsername] = useState("");
   const [authToken, setAuthToken] = useState(null);
-
-  const BACKEND_URL = "http://localhost:8000";
 
   const registerMutation = useMutation({
     mutationFn: (user_id) =>
