@@ -23,6 +23,9 @@ class Level6(BaseLevel):
         length = len(password)
         required_skulls = length // 10
         actual_skulls = password.count(skull)
+        verification = actual_skulls == required_skulls
+        print(actual_skulls, required_skulls)
+        print(verification)
         return actual_skulls == required_skulls
 
     def start(self):
