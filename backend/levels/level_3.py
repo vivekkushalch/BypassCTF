@@ -8,10 +8,13 @@ class Level3(BaseLevel):
         )
     
     def is_valid(password: str) -> bool:
+
+        for char in password:
+            print(char, char.isupper())
     # Rule 3: Password must include an uppercase letter
-     if not any(char.isupper() for char in password):
-        return False
-     return True 
+        if not any(char.isupper() for char in password):
+            return False
+        return True 
 
     def start(self):
         pass

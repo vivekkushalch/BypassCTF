@@ -9,7 +9,7 @@ class Level1(BaseLevel):
     def __init__(self):
         super().__init__(
             level_id=1,
-            level_desc="Enter the correct password to proceed.",
+            level_desc="Enter welcome123",
         )
     
     def is_valid(self, password: str, level_state: dict) -> bool:
@@ -23,11 +23,12 @@ class Level1(BaseLevel):
         Returns:
             bool: True if password is correct, False otherwise
         """
-        return password == "welcome123"
+        # return password == "welcome123"
+        return "welcome123" in password
 
     def start(self):
         return {
-                "level_state":{},
+            "level_state":{},
             "level_extras": {}            
         }
 # Create a singleton instance of the level
