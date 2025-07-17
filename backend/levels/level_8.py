@@ -4,7 +4,7 @@ class Level8(BaseLevel):
     def __init__(self):
         super().__init__(
             level_id=8,
-            level_desc="The atomic numbers of all periodic table elements in your password must add up to exactly 200.",
+            level_desc="The atomic numbers of all periodic table elements in your password must add up to exactly 200. for ex. Tungsten(W) is 74 and Iridium(Ir) is 77. So IrW is 151",
         )
     
     def __init_elements(self):
@@ -68,6 +68,7 @@ class Level8(BaseLevel):
         elements = self.__init_elements()
         elements_found = self.extract_elements(password)
         total_atomic_number = sum(elements[symbol] for symbol in elements_found)
+        print(total_atomic_number)
         return total_atomic_number == 200
 
     def start(self):

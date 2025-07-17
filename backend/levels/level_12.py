@@ -44,7 +44,7 @@ class Level12(BaseLevel):
             return False
         
         # Case-insensitive exact match comparison
-        return password.lower().strip() == level_state['pokemon_name'].lower().strip()
+        return level_state['pokemon_name'].lower().strip() in password.lower().strip()
 
     def start(self):
         return{

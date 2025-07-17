@@ -1,4 +1,5 @@
 from .base_level import BaseLevel
+from typing import Dict, Any
 
 class Level3(BaseLevel):
     def __init__(self):
@@ -7,14 +8,9 @@ class Level3(BaseLevel):
             level_desc="Password must include an uppercase letter",
         )
     
-    def is_valid(password: str) -> bool:
-
-        for char in password:
-            print(char, char.isupper())
-    # Rule 3: Password must include an uppercase letter
-        if not any(char.isupper() for char in password):
-            return False
-        return True 
+    def is_valid(self, password: str, level_state: Dict[str, Any]) -> bool:
+        # Check if password contains at least one uppercase letter
+        return any(char.isupper() for char in password)
 
     def start(self):
         pass
