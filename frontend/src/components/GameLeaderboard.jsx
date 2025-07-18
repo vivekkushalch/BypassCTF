@@ -7,7 +7,7 @@ const mockData = Array.from({ length: 50 }, (_, i) => ({
   score: Math.floor(Math.random() * 1000),
 }));
 
-const Leaderboard = () => {
+const GameLeaderboard = () => {
   // const {data, isLoading} = useGetDetailHook()
 
   const itemsPerPage = 10;
@@ -102,4 +102,4 @@ const Leaderboard = () => {
   );
 };
 
-export default Leaderboard;
+export default GameLeaderboard;

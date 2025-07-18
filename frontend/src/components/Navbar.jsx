@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Leaderboard from "./LeaderBoard";
+import WhiteLeaderboard from "./WhiteLeaderboard.jsx";
 
 const Navbar = ({ username }) => {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
@@ -69,7 +69,7 @@ const Navbar = ({ username }) => {
                 isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
               }`}
             >
-              <Leaderboard />
+              <WhiteLeaderboard />
               <div className="text-center mt-4">
                 <button
                   className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -98,7 +98,7 @@ const Navbar = ({ username }) => {
                 </button>
               </div>
               <div className="flex-grow">
-                <Leaderboard />
+                <WhiteLeaderboard />
               </div>
             </div>
           )}
