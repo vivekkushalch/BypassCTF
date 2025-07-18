@@ -5,7 +5,6 @@ import Password from "./components/PasswordField";
 import GameLeaderboard from "./components/GameLeaderboard";
 
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-("https://bypass-crjv.onrender.com");
 
 function App() {
   const [isRegistered, setIsRegistered] = useState(false);
@@ -49,11 +48,6 @@ function App() {
   }, []);
 
   const handleAnswer = (answer) => {
-    if (!answer) {
-      alert("Only BIT students can proceed!");
-      return;
-    }
-
     setAnswered(true);
     setIsFromBIT(true);
   };
@@ -113,12 +107,12 @@ function App() {
               >
                 {showLeaderboard ? "HIDE" : "BOARD"}
               </button>
-              <div className="px-3 py-1 border border-cyan-400 bg-cyan-900/20">
-                <span className="text-cyan-400 text-sm font-mono">
+              <div className="px-3 py-1 border border-slate-700 bg-cyan-900/20">
+                <span className="text-cyan-500 text-sm font-mono">
                   {savedUsername}
                 </span>
               </div>
-              <div className="w-8 h-8 border-2 border-green-400 bg-green-900/50"></div>
+              {/* <div className="w-8 h-8 border-2 border-green-400 bg-green-900/50"></div> */}
             </div>
           </div>
         </div>
@@ -142,7 +136,7 @@ function App() {
                   onClick={() => handleAnswer(true)}
                   className="flex-1 border-2 border-green-400 bg-green-900/20 text-green-400 py-3 px-6 font-bold hover:bg-green-900/40 transform hover:scale-105 transition-all duration-200 shadow-lg shadow-green-500/30 uppercase tracking-wide"
                 >
-                  &gt; YES
+                  YES
                 </button>
                 <button
                   onClick={() => handleAnswer(false)}
@@ -189,7 +183,7 @@ function App() {
                       <span>&gt; CREATING...</span>
                     </div>
                   ) : (
-                    "&gt; CREATE ACCOUNT"
+                    "CREATE ACCOUNT"
                   )}
                 </button>
               </div>
@@ -211,11 +205,11 @@ function App() {
       {showLeaderboard && (
         <>
           {/* Backdrop */}
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-40 animate-in fade-in duration-300"
             onClick={() => setShowLeaderboard(false)}
           />
-          
+
           {/* Modal */}
           <div className="fixed top-0 right-0 h-full w-96 bg-black border-l-2 border-yellow-400 z-50 transform transition-transform duration-300 ease-out animate-in slide-in-from-right">
             <div className="h-full flex flex-col">
@@ -224,7 +218,9 @@ function App() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 border-2 border-yellow-400 bg-yellow-900/50 flex items-center justify-center">
-                      <span className="text-yellow-400 font-bold text-sm">🏆</span>
+                      <span className="text-yellow-400 font-bold text-sm">
+                        🏆
+                      </span>
                     </div>
                     <h3 className="text-xl font-bold text-yellow-400 uppercase tracking-wider">
                       LEADERBOARD
@@ -241,7 +237,7 @@ function App() {
                   &gt; TOP HACKERS WORLDWIDE
                 </p>
               </div>
-              
+
               {/* Content */}
               <div className="flex-1 overflow-hidden">
                 <div className="h-full p-4">

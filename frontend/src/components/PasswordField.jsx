@@ -6,7 +6,7 @@ import { CircleCheckBig, Camera } from "lucide-react";
 import GameLeaderboard from "./GameLeaderboard.jsx";
 
 const submitPassword = async ({ password, authToken }) => {
-  const response = await axios.post(`https://bypass-crjv.onrender.com/submit`, {
+  const response = await axios.post(`${BACKEND_URL}/submit`, {
     password,
     auth_token: authToken,
   });
