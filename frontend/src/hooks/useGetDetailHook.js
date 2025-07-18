@@ -5,7 +5,7 @@ const getUsersData = async () =>{
     try {
         // backend url
         const response = await axios.get(
-            "https://jsonplaceholder.typicode.com/posts"
+            `${import.meta.env.VITE_BACKEND_URL}/leaderboard`
         );
         const data = response.data;
         // console.log(data);
