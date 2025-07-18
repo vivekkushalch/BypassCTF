@@ -1,34 +1,4 @@
 import React, { useEffect, useState } from "react";
-<<<<<<< HEAD
-import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
-import { BACKEND_URL } from "../App";
-
-const submitPassword = async ({ password, authToken }) => {
-  const response = await axios.post(`https://bypass-crjv.onrender.com/submit`, {
-    password,
-    auth_token: authToken,
-  });
-  console.log(response.data);
-  return response.data;
-};
-
-const Password = () => {
-  const [password, setPassword] = useState("");
-  const [levelData, setLevelData] = useState(null);
-
-  const { mutate } = useMutation({
-    mutationFn: submitPassword,
-    onSuccess: (data) => {
-      setLevelData(data);
-      localStorage.setItem("password", password);
-    },
-    onError: (err) => {
-      console.error("Password submit failed", err);
-    },
-  });
-
-=======
 import axios from "axios";
 import { BACKEND_URL } from "../App";
 
@@ -36,7 +6,6 @@ const Password = ({ authToken }) => {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [levelData, setLevelData] = useState(null);
->>>>>>> 7e038d731d31d6c5562cc2ccd5ffdf3339c0ee43
   useEffect(() => {
     const savedPassword = localStorage.getItem("password");
     if (savedPassword) {
@@ -44,17 +13,6 @@ const Password = ({ authToken }) => {
     }
   }, []);
 
-<<<<<<< HEAD
-  // useEffect(() => {
-  //   const delay = setTimeout(() => {
-  //     if (password.trim() && authToken) {
-  //       mutate({ password, authToken });
-  //     }
-  //   }, 600);
-
-  //   return () => clearTimeout(delay);
-  // }, [password]);
-=======
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (password && authToken) {
@@ -90,19 +48,11 @@ const Password = ({ authToken }) => {
     }, 600);
     return () => clearTimeout(timer);
   }, [password, authToken]);
->>>>>>> 7e038d731d31d6c5562cc2ccd5ffdf3339c0ee43
 
   const handlePasswordChange = (e) => {
     const newPassword = e.target.value;
     setPassword(newPassword);
-<<<<<<< HEAD
-    const authToken = localStorage.getItem("authToken");
-
-    //rate limit
-    mutate({ password: newPassword, authToken });
-=======
     localStorage.setItem("password", newPassword);
->>>>>>> 7e038d731d31d6c5562cc2ccd5ffdf3339c0ee43
   };
 
   return (
@@ -115,31 +65,6 @@ const Password = ({ authToken }) => {
         placeholder="Enter your password..."
       />
 
-<<<<<<< HEAD
-      {/* <div className="text-sm text-gray-500 mt-2">
-        {password.trim() ? "🔄 Validating..." : "Type your password"}
-      </div> */}
-
-      {/* Result Area */}
-      {levelData && (
-        <div className="w-full max-w-xl mt-6 space-y-4">
-          {/* Current Level */}
-          {levelData.current_level && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                {levelData.current_level.name ||
-                  `Level ${levelData.current_level.level}`}
-              </h3>
-              <p className="text-blue-700">
-                {levelData.current_level.description ||
-                  "New challenge unlocked!"}
-              </p>
-            </div>
-          )}
-
-          {/* Passed Levels */}
-          {levelData.passed_levels?.length > 0 && (
-=======
       {/* Status indicator */}
       <div className="text-sm text-gray-500 mt-2">
         {isSubmitting ? "🔄 Validating..." : "Type your password"}
@@ -192,20 +117,10 @@ const Password = ({ authToken }) => {
 
           {/* Passed Levels */}
           {levelData?.passed_levels && levelData?.passed_levels?.length > 0 && (
->>>>>>> 7e038d731d31d6c5562cc2ccd5ffdf3339c0ee43
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-green-800 mb-2">
                 Passed Levels ({levelData.passed_levels.length})
               </h3>
-<<<<<<< HEAD
-              <ul className="space-y-2">
-                {levelData.passed_levels.map((level, i) => (
-                  <li key={i} className="text-green-700 text-sm">
-                    ✅ Level {level.level}: {level.description}
-                  </li>
-                ))}
-              </ul>
-=======
               <div className="space-y-2">
                 {levelData?.passed_levels?.map((levelObj, index) => (
                   <div
@@ -228,27 +143,10 @@ const Password = ({ authToken }) => {
                   </div>
                 ))}
               </div>
->>>>>>> 7e038d731d31d6c5562cc2ccd5ffdf3339c0ee43
             </div>
           )}
 
           {/* Failed Levels */}
-<<<<<<< HEAD
-          {levelData.failed_levels?.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-red-800 mb-2">
-                Failed Levels ({levelData.failed_levels.length})
-              </h3>
-              <ul className="space-y-2">
-                {levelData.failed_levels.map((level, i) => (
-                  <li key={i} className="text-red-700 text-sm">
-                    ❌ Level {level.level}: {level.description}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-=======
           {levelData?.failed_levels && levelData?.failed_levels?.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-red-800 mb-2">
@@ -288,7 +186,6 @@ const Password = ({ authToken }) => {
               {JSON.stringify(levelData, null, 2)}
             </pre>
           </details>
->>>>>>> 7e038d731d31d6c5562cc2ccd5ffdf3339c0ee43
         </div>
       )}
     </div>

@@ -12,10 +12,6 @@
   "dependencies": {
     "@tanstack/react-query": "^5.83.0",
     "axios": "^1.10.0",
-<<<<<<< HEAD
-    "framer-motion": "^12.23.6",
-=======
->>>>>>> 7e038d731d31d6c5562cc2ccd5ffdf3339c0ee43
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

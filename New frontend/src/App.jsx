@@ -5,10 +5,6 @@ import Navbar from "./components/Navbar";
 import Password from "./components/PasswordField";
 
 export const BACKEND_URL = "https://bypass-crjv.onrender.com";
-<<<<<<< HEAD
-
-=======
->>>>>>> 7e038d731d31d6c5562cc2ccd5ffdf3339c0ee43
 function App() {
   const [isRegistered, setIsRegistered] = useState(false);
   const [answered, setAnswered] = useState(false);
@@ -20,11 +16,7 @@ function App() {
     mutationFn: (user_id) =>
       axios.post(
         `${BACKEND_URL}/register`,
-<<<<<<< HEAD
-        { user_id,isFromBIT }, // to do
-=======
         { user_id },
->>>>>>> 7e038d731d31d6c5562cc2ccd5ffdf3339c0ee43
         { withCredentials: false }
       ),
     onSuccess: (res) => {
