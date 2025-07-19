@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { BACKEND_URL } from "../App";
+
 import { CircleCheckBig, Camera } from "lucide-react";
 import GameLeaderboard from "./GameLeaderboard.jsx";
+import MazeFrontend from "./Maze.jsx";
 
 const submitPassword = async ({ password, authToken }) => {
   const response = await axios.post(`https://bypass-crjv.onrender.com/submit`, {
@@ -14,7 +15,9 @@ const submitPassword = async ({ password, authToken }) => {
   return response.data;
 };
 
-const Password = ({ authToken, showLeaderboard }) => {
+const Password = ({ showLeaderboard }) => {
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
   const [password, setPassword] = useState("");
   const [levelData, setLevelData] = useState(null);
 
@@ -54,6 +57,15 @@ const Password = ({ authToken, showLeaderboard }) => {
     //rate limit
     mutate({ password: newPassword, authToken });
   };
+  const handleMazeComplete = (completionPassword) => {
+    // The completionPassword already contains original password + "maze_completed"
+    setPassword(completionPassword);
+    localStorage.setItem("password", completionPassword);
+
+    // Trigger a new API call to get updated level data
+    const authToken = localStorage.getItem("authToken");
+    mutate({ password: completionPassword, authToken });
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-8">
@@ -66,8 +78,6 @@ const Password = ({ authToken, showLeaderboard }) => {
           &gt; Enter password to access mainframe &lt;
         </p>
       </div>
-
-      {/* Premium Input */}
       <div className="relative mb-8">
         <input
           type="text"
@@ -80,7 +90,6 @@ const Password = ({ authToken, showLeaderboard }) => {
         {/* Retro border glow */}
         <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 opacity-30 blur-sm animate-pulse -z-10"></div>
       </div>
-
       {/* Results Area */}
       {levelData && (
         <div
@@ -89,68 +98,108 @@ const Password = ({ authToken, showLeaderboard }) => {
         >
           {/* Current Level */}
           {levelData.current_level && (
-            <div
-              key={`current-${levelData.current_level.level}`}
-              className={`border-2 p-6 transition-all duration-500 ease-out transform hover:scale-[1.02] animate-in zoom-in duration-600 font-mono ${
-                levelData.failed_levels?.some(
-                  (failedLevel) =>
-                    failedLevel.level === levelData.current_level.level
-                )
-                  ? "bg-red-900/20 border-red-400 shadow-lg shadow-red-500/30"
-                  : "bg-cyan-900/20 border-cyan-400 shadow-lg shadow-cyan-500/30"
-              }`}
-            >
-              <div className="flex items-start space-x-4">
+            <>
+              {/* Show Maze Game for Level 17 (replaces entire level display) */}
+              {levelData?.current_level?.level === 17 ? (
                 <div
-                  className={`w-12 h-12 border-2 flex items-center justify-center font-bold text-lg ${
+                  key={`maze-${levelData.current_level.level}`}
+                  className="border-2 border-cyan-400 bg-cyan-900/20 p-6 transition-all duration-500 ease-out transform hover:scale-[1.02] animate-in zoom-in duration-600 font-mono shadow-lg shadow-cyan-500/30"
+                >
+                  <div className="text-center mb-4">
+                    <h3 className="text-xl font-bold text-cyan-400 uppercase tracking-wider mb-2">
+                      LEVEL 17: MAZE CHALLENGE
+                    </h3>
+                    <p className="text-cyan-300 text-sm font-mono">
+                      &gt; NAVIGATE THE MAZE TO PROCEED
+                    </p>
+                  </div>
+                  <div className="w-full flex justify-center">
+                    {/* Actual Interactive Maze Component */}
+                    <MazeFrontend onMazeComplete={handleMazeComplete} />
+                  </div>
+                </div>
+              ) : (
+                /* Regular Level Display for all other levels */
+                <div
+                  key={`current-${levelData.current_level.level}`}
+                  className={`border-2 p-6 transition-all duration-500 ease-out transform hover:scale-[1.02] animate-in zoom-in duration-600 font-mono ${
                     levelData.failed_levels?.some(
                       (failedLevel) =>
                         failedLevel.level === levelData.current_level.level
                     )
-                      ? "border-red-400 bg-red-900/30 text-red-400"
-                      : "border-cyan-400 bg-cyan-900/30 text-cyan-400"
+                      ? "bg-red-900/20 border-red-400 shadow-lg shadow-red-500/30"
+                      : "bg-cyan-900/20 border-cyan-400 shadow-lg shadow-cyan-500/30"
                   }`}
                 >
-                  {levelData.failed_levels?.some(
-                    (failedLevel) =>
-                      failedLevel.level === levelData.current_level.level
-                  ) ? (
-                    <span className="animate-pulse">X</span>
-                  ) : (
-                    <span>&gt;</span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3
-                    className={`text-xl font-bold mb-2 transition-colors duration-300 uppercase tracking-wider ${
-                      levelData.failed_levels?.some(
+                  <div className="flex items-start space-x-4">
+                    <div
+                      className={`w-12 h-12 border-2 flex items-center justify-center font-bold text-lg ${
+                        levelData.failed_levels?.some(
+                          (failedLevel) =>
+                            failedLevel.level === levelData.current_level.level
+                        )
+                          ? "border-red-400 bg-red-900/30 text-red-400"
+                          : "border-cyan-400 bg-cyan-900/30 text-cyan-400"
+                      }`}
+                    >
+                      {levelData.failed_levels?.some(
                         (failedLevel) =>
                           failedLevel.level === levelData.current_level.level
-                      )
-                        ? "text-red-400"
-                        : "text-cyan-400"
-                    }`}
-                  >
-                    {levelData.current_level.name ||
-                      `LEVEL ${levelData.current_level.level}`}
-                  </h3>
-                  <p
-                    className={`text-sm transition-colors duration-300 font-mono ${
-                      levelData.failed_levels?.some(
-                        (failedLevel) =>
-                          failedLevel.level === levelData.current_level.level
-                      )
-                        ? "text-red-300"
-                        : "text-cyan-300"
-                    }`}
-                  >
-                    &gt;{" "}
-                    {levelData.current_level.description ||
-                      "NEW CHALLENGE DETECTED"}
-                  </p>
+                      ) ? (
+                        <span className="animate-pulse">X</span>
+                      ) : (
+                        <span>&gt;</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3
+                        className={`text-xl font-bold mb-2 transition-colors duration-300 uppercase tracking-wider ${
+                          levelData.failed_levels?.some(
+                            (failedLevel) =>
+                              failedLevel.level ===
+                              levelData.current_level.level
+                          )
+                            ? "text-red-400"
+                            : "text-cyan-400"
+                        }`}
+                      >
+                        {levelData.current_level.name ||
+                          `LEVEL ${levelData.current_level.level}`}
+                      </h3>
+                      <p
+                        className={`text-sm transition-colors duration-300 font-mono ${
+                          levelData.failed_levels?.some(
+                            (failedLevel) =>
+                              failedLevel.level ===
+                              levelData.current_level.level
+                          )
+                            ? "text-red-300"
+                            : "text-cyan-300"
+                        }`}
+                      >
+                        &gt;{" "}
+                        {levelData.current_level.description ||
+                          "NEW CHALLENGE DETECTED"}
+                      </p>
+                      {/* Pokemon Image for Level 12 (only show if level 12 is current and not passed) */}
+                      {levelData.current_level.level === 12 &&
+                        !levelData.passed_levels?.some(
+                          (level) => level.level === 12
+                        ) && (
+                          <div className="mt-4 flex justify-center">
+                            <img
+                              src="/pokemonImage.png"
+                              alt="Pokemon Challenge"
+                              className="w-48 h-48 object-contain"
+                              style={{ imageRendering: "pixelated" }}
+                            />
+                          </div>
+                        )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              )}
+            </>
           )}
 
           {/* Failed Levels */}
@@ -195,45 +244,6 @@ const Password = ({ authToken, showLeaderboard }) => {
                     </div>
                   </div>
                 ))}
-            </div>
-          )}
-
-          {/* Pokemon Image for Level 12 Completion */}
-          {levelData?.passed_levels?.some((level) => level.level === 12) && (
-            <div
-              key="pokemon-celebration"
-              className="border-2 border-pink-500 bg-pink-900/20 p-6 transition-all duration-500 ease-out animate-in zoom-in duration-600 font-mono shadow-lg shadow-pink-500/30"
-            >
-              <div className="text-center space-y-4">
-                <div className="flex items-center justify-center space-x-3 mb-4">
-                  <div className="w-12 h-12 border-2 border-pink-500 bg-pink-900/50 flex items-center justify-center">
-                    <span className="text-pink-400 font-bold text-lg">★</span>
-                  </div>
-                  <h3 className="text-2xl font-bold text-pink-400 uppercase tracking-widest">
-                    WHO IS THIS POKEMON ?
-                  </h3>
-                </div>
-
-                {/* <p className="text-pink-300 text-sm font-mono uppercase tracking-wider">
-              &gt; CONGRATULATIONS, TRAINER! YOU'VE UNLOCKED A POKEMON!
-            </p> */}
-
-                {/* Pokemon Image - Full Card Fill */}
-                <div className="flex justify-center my-6">
-                  <div className="border-2 border-pink-400 bg-pink-900/30 p-2 w-full max-w-lg">
-                    <img
-                      src="/pokemonImage.png"
-                      alt="Pokemon Reward"
-                      className="w-full h-64 object-contain pixelated hover:scale-105 transition-transform duration-300"
-                      style={{ imageRendering: "pixelated" }}
-                    />
-                  </div>
-                </div>
-
-                {/* <div className="text-pink-400 text-xs font-mono uppercase tracking-widest">
-              &gt; SPECIAL REWARD UNLOCKED &lt;
-            </div> */}
-              </div>
             </div>
           )}
 
