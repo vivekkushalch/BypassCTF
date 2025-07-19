@@ -6,7 +6,7 @@ import { CircleCheckBig, Camera } from "lucide-react";
 import GameLeaderboard from "./GameLeaderboard.jsx";
 
 const submitPassword = async ({ password, authToken }) => {
-  const response = await axios.post(`${BACKEND_URL}/submit`, {
+  const response = await axios.post(`https://bypass-crjv.onrender.com/submit`, {
     password,
     auth_token: authToken,
   });
@@ -197,6 +197,46 @@ const Password = ({ authToken, showLeaderboard }) => {
                 ))}
             </div>
           )}
+
+          {/* Pokemon Image for Level 12 Completion */}
+          {levelData?.passed_levels?.some((level) => level.level === 1) && (
+            <div
+              key="pokemon-celebration"
+              className="border-2 border-pink-500 bg-pink-900/20 p-6 transition-all duration-500 ease-out animate-in zoom-in duration-600 font-mono shadow-lg shadow-pink-500/30"
+            >
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center space-x-3 mb-4">
+                  <div className="w-12 h-12 border-2 border-pink-500 bg-pink-900/50 flex items-center justify-center">
+                    <span className="text-pink-400 font-bold text-lg">★</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-pink-400 uppercase tracking-widest">
+                    WHO IS THIS POKEMON ?
+                  </h3>
+                </div>
+
+                {/* <p className="text-pink-300 text-sm font-mono uppercase tracking-wider">
+              &gt; CONGRATULATIONS, TRAINER! YOU'VE UNLOCKED A POKEMON!
+            </p> */}
+
+                {/* Pokemon Image - Full Card Fill */}
+                <div className="flex justify-center my-6">
+                  <div className="border-2 border-pink-400 bg-pink-900/30 p-2 w-full max-w-lg">
+                    <img
+                      src="/pokemonImage.png"
+                      alt="Pokemon Reward"
+                      className="w-full h-64 object-contain pixelated hover:scale-105 transition-transform duration-300"
+                      style={{ imageRendering: "pixelated" }}
+                    />
+                  </div>
+                </div>
+
+                {/* <div className="text-pink-400 text-xs font-mono uppercase tracking-widest">
+              &gt; SPECIAL REWARD UNLOCKED &lt;
+            </div> */}
+              </div>
+            </div>
+          )}
+
           {/* Passed Levels */}
           {levelData.passed_levels?.length > 0 && (
             <div
@@ -245,7 +285,6 @@ const Password = ({ authToken, showLeaderboard }) => {
           )}
         </div>
       )}
-
       {/* Right-side Leaderboard Modal */}
       {showLeaderboard && (
         <>
