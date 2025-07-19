@@ -33,7 +33,20 @@ class Level14(BaseLevel):
         Returns:
             str: A hint about the powerhouse of the cell
         """
-        return "Think biology! What organelle is known as 'the powerhouse of the cell'? It starts with 'mito...' 🧬"
+        return "Think biology! What organelle is known as 'the powerhouse of the cell'?"
+
+    def start(self):
+        """
+        Initialize the level.
+        
+        Returns:
+            dict: Level initialization data
+        """
+        return {
+            'level_state': {},
+            'level_desc': self.level_desc,
+            'level_id': self.level_id
+        }
 
 # Create a singleton instance of the level
 level = Level14()

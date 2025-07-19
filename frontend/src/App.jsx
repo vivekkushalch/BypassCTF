@@ -4,7 +4,7 @@ import axios from "axios";
 import Navbar from "./components/Navbar";
 import Password from "./components/PasswordField";
 
-export const BACKEND_URL = "http://localhost:8000";
+export const BACKEND_URL = "https://bypass-crjv.onrender.com"; // Update this to your backend URL
 function App() {
   const [isRegistered, setIsRegistered] = useState(false);
   const [answered, setAnswered] = useState(false);

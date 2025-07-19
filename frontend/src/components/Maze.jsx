@@ -1032,10 +1032,10 @@ const MazeFrontend = ({ onMazeComplete }) => {
                 // Get the last password from localStorage and append "maze_completed"
                 const lastPassword = localStorage.getItem('password') || '';
                 const completionPassword = lastPassword + 'maze_completed';
-                
+
                 // Store the completion password but keep the original password intact
                 localStorage.setItem('password', lastPassword); // Ensure original is preserved
-                
+
                 setTimeout(() => {
                     onMazeComplete(completionPassword);
                 }, 3000); // Wait for celebration to show

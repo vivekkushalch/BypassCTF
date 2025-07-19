@@ -76,7 +76,7 @@ const Password = ({ authToken }) => {
         value={password}
         onChange={handlePasswordChange}
         className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-medium text-gray-800 border border-gray-300 rounded-lg sm:rounded-xl shadow-md bg-white focus:outline-none focus:ring-2 sm:focus:ring-4 focus:ring-blue-300 transition-all duration-300 placeholder-gray-400"
-        placeholder={levelData?.current_level?.level === 17 ? "Enter MAZE_COMPLETE_17 after finishing the maze..." : "Enter your password..."}
+        placeholder={levelData?.current_level?.level === 17 ? "Enter MAZE_COMPLETED after finishing the maze..." : "Enter your password..."}
       />
 
       {/* Status indicator */}
@@ -91,6 +91,21 @@ const Password = ({ authToken }) => {
 
             {/* Actual Interactive Maze Component */}
             <MazeFrontend onMazeComplete={handleMazeComplete} />
+          </div>
+        </div>
+      )}
+
+      {levelData?.current_level?.level === 19 && (
+        <div className="w-full max-w-7xl mt-4 sm:mt-6 px-1 sm:px-2">
+          <div className="p-2 sm:p-4 md:p-6">
+            {console.log('Iframe URL:', levelData.current_level.iframe_url)}
+            <iframe
+              src={levelData.current_level.iframe_url}
+              title="Map of the country"
+              className="w-full h-96 border border-gray-300"
+              width="100%"
+              height="400"
+            />
           </div>
         </div>
       )}
