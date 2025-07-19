@@ -3,11 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import datetime, timedelta
 import json
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel
+from typing import Optional, Dict, Any, List, Tuple
+from pydantic import BaseModel, Field
 import jwt
 import secrets
 import time
+import operator
 from level_manager import level_manager
 
 app = FastAPI(title="User Registration API")
@@ -36,6 +37,18 @@ class TokenData(BaseModel):
 # Pydantic models
 class UserRegistration(BaseModel):
     user_id: str
+
+class LeaderboardEntry(BaseModel):
+    user_id: str
+    rank: int
+    score: float = Field(..., description="Total score based on levels completed and performance")
+    current_level: int
+    last_updated: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
 
 class UserResponse(BaseModel):
     user_id: str
@@ -81,6 +94,45 @@ async def home():
     """Home endpoint"""
     return {"message": "Welcome to the User Registration API"}
 
+@app.get("/leaderboard", response_model=List[LeaderboardEntry])
+async def get_leaderboard(limit: int = 100, offset: int = 0):
+    """
+    Get the global leaderboard
+    
+    Args:
+        limit: Maximum number of entries to return (max 100)
+        offset: Number of entries to skip (for pagination)
+        
+    Returns:
+        List of leaderboard entries sorted by rank
+    """
+    limit = max(1, min(limit, 100))  # Ensure limit is between 1 and 100
+    db = get_db()
+    
+    # Calculate ranks and get full leaderboard
+    _, leaderboard = calculate_rank("", db)
+    
+    # Apply pagination
+    return leaderboard[offset:offset + limit]
+
+@app.get("/leaderboard/{user_id}", response_model=LeaderboardEntry)
+async def get_user_rank(user_id: str):
+    """
+    Get a specific user's rank and leaderboard information
+    """
+    db = get_db()
+    
+    if user_id not in db:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    rank, leaderboard = calculate_rank(user_id, db)
+    user_entry = next((entry for entry in leaderboard if entry['user_id'] == user_id), None)
+    
+    if not user_entry:
+        raise HTTPException(status_code=404, detail="User not found in leaderboard")
+        
+    return user_entry
+
 @app.post("/register", response_model=UserResponse)
 async def register_user(user_registration: UserRegistration):
     """Register a new user or get existing user data"""
@@ -124,9 +176,42 @@ class PasswordSubmit(BaseModel):
     auth_token: str
     password: str
 
-def calculate_rank(user_id: str, db: dict) -> int:
-    """This function is kept for backward compatibility but always returns 1"""
-    return 1
+def calculate_rank(user_id: str, db: dict) -> Tuple[int, List[dict]]:
+    """
+    Calculate ranks for all users based on their scores.
+    Returns the rank of the specified user and the full leaderboard.
+    """
+    # Get all users with their scores
+    leaderboard = []
+    for uid, user_data in db.items():
+        if not isinstance(user_data, dict):
+            continue
+            
+        # Calculate score based on passed levels and current level
+        passed_levels = user_data.get('passed_levels', [])
+        current_level = user_data.get('current_level', {}).get('level', 1)
+        
+        # Simple scoring: 100 points per level completed + 10 points per level in current level
+        score = (len(passed_levels) * 100) + (current_level * 10)
+        
+        leaderboard.append({
+            'user_id': uid,
+            'score': score,
+            'current_level': current_level,
+            'last_updated': user_data.get('last_updated', datetime.utcnow().isoformat())
+        })
+    
+    # Sort by score (descending) and then by last_updated (ascending for tiebreaker)
+    leaderboard.sort(key=lambda x: (-x['score'], x['last_updated']))
+    
+    # Assign ranks
+    for i, entry in enumerate(leaderboard, 1):
+        entry['rank'] = i
+    
+    # Find the user's rank
+    user_rank = next((entry['rank'] for entry in leaderboard if entry['user_id'] == user_id), None)
+    
+    return user_rank or len(leaderboard) + 1, leaderboard
 
 class SubmitResponse(BaseModel):
     user_id: str
