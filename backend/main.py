@@ -105,9 +105,6 @@ async def register_user(user_registration: UserRegistration):
     # Generate JWT
     access_token = create_access_token(user_registration.user_id)
     
-    # Initialize level tries
-    user_data["level_tries"] = {1: 0, 2: 0, 3: 0}  # Initialize tries for all levels
-    
     # Save to database
     db[user_registration.user_id] = user_data
     save_db(db)
