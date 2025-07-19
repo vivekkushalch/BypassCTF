@@ -199,7 +199,7 @@ const Password = ({ authToken, showLeaderboard }) => {
           )}
 
           {/* Pokemon Image for Level 12 Completion */}
-          {levelData?.passed_levels?.some((level) => level.level === 1) && (
+          {levelData?.passed_levels?.some((level) => level.level === 12) && (
             <div
               key="pokemon-celebration"
               className="border-2 border-pink-500 bg-pink-900/20 p-6 transition-all duration-500 ease-out animate-in zoom-in duration-600 font-mono shadow-lg shadow-pink-500/30"
