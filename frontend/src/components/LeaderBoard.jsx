@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 const mockData = Array.from({ length: 50 }, (_, i) => ({
   rank: i + 1,
   username: `user${i + 1}`,
-  score: Math.floor(Math.random() * 1000),
 }));
 
 const Leaderboard = () => {
@@ -34,21 +33,19 @@ const Leaderboard = () => {
 
       <div className="overflow-hidden">
         {/* Table Header */}
-        <div className="grid grid-cols-3 font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-2">
+        <div className="grid grid-cols-2 font-semibold text-gray-700 border-b border-gray-300 pb-2 mb-2">
           <span>Rank</span>
           <span className="text-center">Username</span>
-          <span className="text-right">Score</span>
         </div>
 
         {/* Table Rows */}
         {currentData?.map((item,index) => (
           <div
             key={index}
-            className="grid grid-cols-3 py-2 border-b border-gray-100 text-sm sm:text-base"
+            className="grid grid-cols-2 py-2 border-b border-gray-100 text-sm sm:text-base"
           >
             <span>{item.rank}</span>
             <span className="text-center">{item.username}</span>
-            <span className="text-right font-medium">{item.score}</span>
           </div>
         ))}
 

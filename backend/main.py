@@ -9,7 +9,6 @@ import jwt
 import secrets
 import time
 from level_manager import level_manager
-from user_scorecard import scorecard_manager
 
 app = FastAPI(title="User Registration API")
 
@@ -129,42 +128,14 @@ class PasswordSubmit(BaseModel):
     password: str
 
 def calculate_rank(user_id: str, db: dict) -> int:
-    """Calculate the user's rank based on their score"""
-    # Get all users with their highest level and total tries
-    users = []
-    for uid, data in db.items():
-        try:
-            level = data["current_level"]["level"]
-            tries = sum(data.get("level_tries", {}).values())
-            # Higher level first, then fewer tries
-            users.append({"user_id": uid, "level": level, "tries": tries})
-        except (KeyError, AttributeError):
-            continue
-    
-    # Sort by level (descending) and tries (ascending)
-    sorted_users = sorted(users, key=lambda x: (-x["level"], x["tries"]))
-    
-    # Find the rank (1-based index)
-    for i, user in enumerate(sorted_users, 1):
-        if user["user_id"] == user_id:
-            return i
-    return len(users) + 1  # If not found, put at the end
-
-class LevelScore(BaseModel):
-    level: int
-    completed_at: Optional[str]
-    tries: int
-    score: float
+    """This function is kept for backward compatibility but always returns 1"""
+    return 1
 
 class SubmitResponse(BaseModel):
     user_id: str
     current_level: dict
     passed_levels: list
     failed_levels: list
-    scorecard: List[LevelScore]
-    total_score: float
-    rank: int
-    total_users: int
     message: str
 
 @app.post("/submit", response_model=SubmitResponse)
@@ -174,8 +145,8 @@ async def submit_password(submit_data: PasswordSubmit):
     
     - Verifies the JWT token
     - Validates the password against current level
-    - Updates user progress and scores
-    - Returns user data with ranking and scorecard
+    - Updates user progress
+    - Returns user data with level information
     """
     # Verify token
     try:
@@ -198,24 +169,13 @@ async def submit_password(submit_data: PasswordSubmit):
     result = level_manager.verify_password(user_id, submit_data.password, current_level)
     
     # Update user data based on verification
-    # Get the newly passed levels from this attempt
     newly_passed = result.get("newly_passed", [])
     
     # Update passed_levels with all passed levels (including previously passed)
     user_data["passed_levels"] = result["passed"]
     user_data["failed_levels"] = result["failed"]
     
-    # Track if the current level was passed in this attempt
-    current_level_passed = current_level in newly_passed
-    
-    # Calculate score for this attempt
-    # Get the latest score update for the current level if any
-    current_level_score = next(
-        (update for update in result.get("score_updates", []) if update["level"] == current_level),
-        None
-    )
-    
-    # Update user's current level from the response
+    # Update user's current level from the response if it changed
     if result["current_level"] > current_level:
         new_level = result["current_level"]
         level_info = level_manager.get_level_info(new_level) or {}
@@ -227,28 +187,10 @@ async def submit_password(submit_data: PasswordSubmit):
             "extras": user_data["current_level"].get("extras", {})
         })
         user_data["current_level"]["extras"]["last_passed"] = datetime.now().isoformat()
-        
-        # If we have a score update for the current level, store it
-        if current_level_score:
-            user_data["current_level"]["extras"]["score"] = current_level_score["score"]
-    
-    # Update score if we have a score update for this level
-    if current_level_score:
-        if "level_scores" not in user_data:
-            user_data["level_scores"] = {}
-        user_data["level_scores"][str(current_level)] = current_level_score["score"]
     
     # Save updated user data
     db[user_id] = user_data
     save_db(db)
-    
-    # Get the complete scorecard from the result
-    scorecard = result.get("scorecard", [])
-    total_score = sum(entry.get("score", 0) for entry in scorecard)
-    
-    # Calculate rank and total users
-    rank = calculate_rank(user_id, db)
-    total_users = len(db)
     
     # Ensure current level has all required fields
     current_level_num = user_data["current_level"]["level"]
@@ -267,10 +209,6 @@ async def submit_password(submit_data: PasswordSubmit):
         "current_level": user_data["current_level"],
         "passed_levels": user_data["passed_levels"],
         "failed_levels": user_data["failed_levels"],
-        "scorecard": scorecard,
-        "total_score": total_score,
-        "rank": rank,
-        "total_users": total_users,
         "message": "Password verified successfully" if result.get("passed") else "Password verification failed"
     }
     
