@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { BACKEND_URL } from "../App";
+
 import { CircleCheckBig, Camera } from "lucide-react";
 import GameLeaderboard from "./GameLeaderboard.jsx";
 
@@ -14,7 +14,9 @@ const submitPassword = async ({ password, authToken }) => {
   return response.data;
 };
 
-const Password = ({ authToken, showLeaderboard }) => {
+const Password = ({ showLeaderboard }) => {
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
   const [password, setPassword] = useState("");
   const [levelData, setLevelData] = useState(null);
 
@@ -87,6 +89,7 @@ const Password = ({ authToken, showLeaderboard }) => {
           key={`levelData-${levelData.current_level?.level}-${levelData.passed_levels?.length}-${levelData.failed_levels?.length}`}
           className="space-y-6 animate-in fade-in slide-in-from-bottom duration-700"
         >
+          
           {/* Current Level */}
           {levelData.current_level && (
             <div
@@ -148,6 +151,36 @@ const Password = ({ authToken, showLeaderboard }) => {
                     {levelData.current_level.description ||
                       "NEW CHALLENGE DETECTED"}
                   </p>
+
+                  {/* Image for Current Level (if imageURL is provided) */}
+                  {levelData.current_level.imageURL && (
+                    <div className="mt-4 flex justify-center">
+                      <div className="border-2 border-pink-400 bg-pink-900/30 p-2 w-full max-w-sm">
+                        <div className="text-center mb-2">
+                          <span className="text-pink-400 font-bold text-sm uppercase tracking-wider">
+                            WHO IS THIS POKEMON?
+                          </span>
+                        </div>
+                        <img
+                          src={levelData.current_level.imageURL}
+                          alt="Pokemon Challenge"
+                          className="w-full h-48 object-contain pixelated hover:scale-105 transition-transform duration-300"
+                          style={{ imageRendering: "pixelated" }}
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.nextSibling.style.display = "flex";
+                          }}
+                        />
+                        {/* Fallback content if image fails */}
+                        <div
+                          className="w-full h-48 bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center text-black font-bold text-2xl hidden"
+                          style={{ display: "none" }}
+                        >
+                          🎮 POKEMON
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -191,6 +224,36 @@ const Password = ({ authToken, showLeaderboard }) => {
                         <p className="text-red-300 text-xs mt-1 font-mono">
                           &gt; {level.description}
                         </p>
+
+                        {/* Image for Failed Level (if imageURL is provided) */}
+                        {level.imageURL && (
+                          <div className="mt-3 flex justify-center">
+                            <div className="border-2 border-red-400 bg-red-900/30 p-2 w-full max-w-xs">
+                              <div className="text-center mb-2">
+                                <span className="text-red-400 font-bold text-xs uppercase tracking-wider">
+                                  FAILED POKEMON CHALLENGE
+                                </span>
+                              </div>
+                              <img
+                                src={level.imageURL}
+                                alt="Failed Pokemon Challenge"
+                                className="w-full h-32 object-contain pixelated opacity-75"
+                                style={{ imageRendering: "pixelated" }}
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  e.target.nextSibling.style.display = "flex";
+                                }}
+                              />
+                              {/* Fallback content if image fails */}
+                              <div
+                                className="w-full h-32 bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-bold text-lg hidden"
+                                style={{ display: "none" }}
+                              >
+                                ❌ POKEMON
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -198,44 +261,7 @@ const Password = ({ authToken, showLeaderboard }) => {
             </div>
           )}
 
-          {/* Pokemon Image for Level 12 Completion */}
-          {levelData?.passed_levels?.some((level) => level.level === 1) && (
-            <div
-              key="pokemon-celebration"
-              className="border-2 border-pink-500 bg-pink-900/20 p-6 transition-all duration-500 ease-out animate-in zoom-in duration-600 font-mono shadow-lg shadow-pink-500/30"
-            >
-              <div className="text-center space-y-4">
-                <div className="flex items-center justify-center space-x-3 mb-4">
-                  <div className="w-12 h-12 border-2 border-pink-500 bg-pink-900/50 flex items-center justify-center">
-                    <span className="text-pink-400 font-bold text-lg">★</span>
-                  </div>
-                  <h3 className="text-2xl font-bold text-pink-400 uppercase tracking-widest">
-                    WHO IS THIS POKEMON ?
-                  </h3>
-                </div>
 
-                {/* <p className="text-pink-300 text-sm font-mono uppercase tracking-wider">
-              &gt; CONGRATULATIONS, TRAINER! YOU'VE UNLOCKED A POKEMON!
-            </p> */}
-
-                {/* Pokemon Image - Full Card Fill */}
-                <div className="flex justify-center my-6">
-                  <div className="border-2 border-pink-400 bg-pink-900/30 p-2 w-full max-w-lg">
-                    <img
-                      src="/pokemonImage.png"
-                      alt="Pokemon Reward"
-                      className="w-full h-64 object-contain pixelated hover:scale-105 transition-transform duration-300"
-                      style={{ imageRendering: "pixelated" }}
-                    />
-                  </div>
-                </div>
-
-                {/* <div className="text-pink-400 text-xs font-mono uppercase tracking-widest">
-              &gt; SPECIAL REWARD UNLOCKED &lt;
-            </div> */}
-              </div>
-            </div>
-          )}
 
           {/* Passed Levels */}
           {levelData.passed_levels?.length > 0 && (
