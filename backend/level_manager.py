@@ -10,7 +10,6 @@ import json
 from typing import Dict, List, Optional, Any, cast
 from datetime import datetime
 
-from user_scorecard import scorecard_manager
 from levels.base_level import BaseLevel
 
 class LevelManager:
@@ -74,7 +73,7 @@ class LevelManager:
                 except (ValueError, ImportError, AttributeError) as e:
                     print(f"Warning: Failed to load validator for {filename}: {e}")
     
-    def verify_password(self, user_id: str, password: str, current_level: int) -> dict:
+    def verify_password(self, user_id: str, password: str, current_level: int) -> Dict[str, Any]:
         """Verify a password against all levels up to the current level.
         
         Args:
@@ -83,11 +82,10 @@ class LevelManager:
             current_level: The user's current level
             
         Returns:
-            dict: Dictionary containing verification results and score information
+            dict: Dictionary containing verification results
         """
         passed_levels = []
         failed_levels = []
-        score_updates = []
         new_current_level = current_level  # Initialize with current level
         
         # Ensure user data is loaded
@@ -96,16 +94,18 @@ class LevelManager:
             user_data['level_states'] = {}
             self._save_user_data(user_id, user_data)
         
-        # Get or create user's scorecard
-        scorecard = scorecard_manager.get_scorecard(user_id, total_levels=len(self.levels))
-        
-        # Get all accessible levels (previously passed + current level)
+        # Track all accessible levels (previously passed + current level)
         accessible_levels = set(range(1, current_level + 1))
         
         # Add any previously passed levels beyond current_level
-        for entry in scorecard:
-            if entry.get("completed_at") is not None:
-                accessible_levels.add(entry["level"])
+        if 'passed_levels' in user_data:
+            for level in user_data['passed_levels']:
+                if isinstance(level, dict):
+                    level_num = level.get('level')
+                else:
+                    level_num = level
+                if level_num is not None:
+                    accessible_levels.add(int(level_num))
         
         # Sort the levels to process them in order
         for level_num in sorted(accessible_levels):
@@ -114,22 +114,13 @@ class LevelManager:
                 
             level = self.levels[level_num]
             
-            # Get current level stats
-            level_stats = next((entry for entry in scorecard if entry["level"] == level_num), None)
-            if not level_stats:
-                continue
-                
             # Skip validation for already completed levels
-            if level_stats["completed_at"] is not None:
-                # If level is already completed, ensure it's in passed_levels and not in failed_levels
-                if level_num not in [lvl['level'] for lvl in passed_levels]:
-                    passed_levels.append({
-                        'level': level_num,
-                        'name': f'Level {level_num}',
-                        'description': level.level_desc if hasattr(level, 'level_desc') else ''
-                    })
-                # Remove from failed_levels if it's there
-                failed_levels = [lvl for lvl in failed_levels if lvl['level'] != level_num]
+            if any(lvl.get('level') == level_num for lvl in user_data.get('passed_levels', [])):
+                passed_levels.append({
+                    'level': level_num,
+                    'name': f'Level {level_num}',
+                    'description': level.level_desc if hasattr(level, 'level_desc') else ''
+                })
                 continue
                 
             # Get or initialize level state
@@ -142,10 +133,6 @@ class LevelManager:
             
             level_state = user_data['level_states'].get(str(level_num), {})
             
-            # Record the attempt if not already completed
-            if level_stats["completed_at"] is None:
-                scorecard_manager.record_attempt(user_id, level_num)
-            
             try:
                 # Validate the password with level state
                 if level.is_valid(password, level_state):
@@ -155,46 +142,17 @@ class LevelManager:
                         'description': level.level_desc if hasattr(level, 'level_desc') else ''
                     })
                     
-                    # Only update score and completion if not already completed
-                    if level_stats["completed_at"] is None:
-                        # Calculate score and mark as completed
-                        score = self.calculate_score(level_num, level_stats["tries"] + 1)
-                        completed_at = datetime.now().isoformat()
-                        
-                        # Update scorecard
-                        scorecard_manager.complete_level(user_id, level_num, score, completed_at)
-                        
-                        # If this was the current level, update new_current_level
-                        if level_num == current_level:
-                            new_current_level = current_level + 1
-                            
-                        # Add to score updates
-                        score_updates.append({
-                            'level': level_num,
-                            'score': score,
-                            'tries': level_stats["tries"] + 1,
-                            'completed': True,
-                            'completed_at': completed_at
-                        })
-                        
-                        # Update level state if needed
-                        if level_state:
-                            user_data['level_states'][str(level_num)] = level_state
-                            self._save_user_data(user_id, user_data)
+                    # If this was the current level, update new_current_level
+                    if level_num == current_level:
+                        new_current_level = current_level + 1
                     
-                    # Ensure the level is in passed_levels and not in failed_levels
-                    if level_num not in [lvl['level'] for lvl in passed_levels]:
-                        passed_levels.append({
-                            'level': level_num,
-                            'name': f'Level {level_num}',
-                            'description': level.level_desc if hasattr(level, 'level_desc') else ''
-                        })
-                    # Remove from failed_levels if it's there
-                    failed_levels = [lvl for lvl in failed_levels if lvl['level'] != level_num]
+                    # Update level state if needed
+                    if level_state:
+                        user_data['level_states'][str(level_num)] = level_state
+                        self._save_user_data(user_id, user_data)
                 else:
                     # Only add to failed_levels if not already passed
-                    if level_num not in [lvl['level'] for lvl in passed_levels]:
-                        failed_levels = [lvl for lvl in failed_levels if lvl['level'] != level_num]  # Remove if already in failed_levels
+                    if not any(lvl.get('level') == level_num for lvl in user_data.get('passed_levels', [])):
                         failed_levels.append({
                             'level': level_num,
                             'name': f'Level {level_num}',
@@ -203,68 +161,45 @@ class LevelManager:
             except Exception as e:
                 print(f"Error validating level {level_num}: {e}")
                 # Only add to failed_levels if not already passed
-                if level_num not in [lvl['level'] for lvl in passed_levels]:
-                    failed_levels = [lvl for lvl in failed_levels if lvl['level'] != level_num]  # Remove if already in failed_levels
+                if not any(lvl.get('level') == level_num for lvl in user_data.get('passed_levels', [])):
                     failed_levels.append({
                         'level': level_num,
                         'name': f'Level {level_num}',
                         'description': level.level_desc if hasattr(level, 'level_desc') else ''
                     })
         
-        # Get the current scorecard state for response
-        scorecard_data = scorecard_manager.get_all_scores(user_id)
-        
-        # Get all passed levels from the scorecard (both previously and newly completed)
-        all_passed_levels = []
-        for entry in scorecard_data:
-            if entry.get("completed_at") is not None:
-                all_passed_levels.append(entry["level"])
-                
-                # Ensure all completed levels are in passed_levels
-                if not any(lvl['level'] == entry["level"] for lvl in passed_levels):
-                    level = self.levels.get(entry["level"])
-                    passed_levels.append({
-                        'level': entry["level"],
-                        'name': f'Level {entry["level"]}',
-                        'description': level.level_desc if level and hasattr(level, 'level_desc') else ''
-                    })
-                    
-                    # Remove from failed_levels if it's there
-                    failed_levels = [lvl for lvl in failed_levels if lvl['level'] != entry["level"]]
-        
         # Get newly passed levels from this attempt
         newly_passed = [
             level for level in passed_levels 
-            if level['level'] not in all_passed_levels
+            if not any(lvl.get('level') == level['level'] for lvl in user_data.get('passed_levels', []))
         ]
         
-        # Create a mapping of level numbers to level objects for passed levels
-        passed_levels_map = {level['level']: level for level in passed_levels}
-        
-        # Get all passed levels as level objects
-        all_passed = [
-            passed_levels_map.get(level_num, {
-                'level': level_num,
-                'name': f'Level {level_num}',
-                'description': self.levels[level_num].level_desc if level_num in self.levels else ''
-            })
-            for level_num in all_passed_levels
-        ]
-        
-        # Add any newly passed levels that might not be in the scorecard yet
-        for level in newly_passed:
-            if level['level'] not in [lvl['level'] for lvl in all_passed]:
-                # Ensure the level is marked as completed in the scorecard
-                scorecard_manager.complete_level(
-                    user_id, 
-                    level['level'], 
-                    self.calculate_score(level['level'], 1),  # Default score for newly detected completions
-                    datetime.now().isoformat()
-                )
+        # Ensure all passed levels are included (both previously and newly passed)
+        all_passed = user_data.get('passed_levels', []).copy()
+        for level in passed_levels:
+            if not any(lvl.get('level') == level['level'] for lvl in all_passed):
                 all_passed.append(level)
         
+        # Ensure all passed levels have the correct format
+        formatted_passed = []
+        for level in all_passed:
+            if isinstance(level, dict):
+                formatted_passed.append({
+                    'level': level.get('level'),
+                    'name': level.get('name', f'Level {level.get("level")}'),
+                    'description': level.get('description', '')
+                })
+            else:
+                level_num = int(level) if str(level).isdigit() else 0
+                level_info = self.get_level_info(level_num) or {}
+                formatted_passed.append({
+                    'level': level_num,
+                    'name': f'Level {level_num}',
+                    'description': level_info.get('description', '')
+                })
+        
         # Sort by level number
-        all_passed = sorted(all_passed, key=lambda x: x['level'])
+        all_passed = sorted(formatted_passed, key=lambda x: x['level'])
         
         # For backward compatibility, also maintain a list of just level numbers
         all_passed_levels = [level['level'] for level in all_passed]
@@ -285,8 +220,6 @@ class LevelManager:
             'newly_passed': newly_passed,  # Only levels passed in this attempt as level objects
             'failed': failed_levels,  # Levels that failed in this attempt as level objects
             'current_level': new_current_level,  # Updated current level if level was completed
-            'score_updates': score_updates,
-            'scorecard': scorecard_data
         }
 
     def get_level_info(self, level_num: int) -> Optional[Dict[str, Any]]:
@@ -358,23 +291,16 @@ class LevelManager:
         return False
     
     def calculate_score(self, level: int, tries: int) -> float:
-        """Calculate a score based on level and number of tries.
-        
-        The score is calculated as follows:
-        - Base score: 1000 points per level (higher levels are worth more)
-        - Try penalty: 50 points per attempt after the first one
-        - Minimum score: 100 points
+        """This method is kept for backward compatibility but always returns 0.
         
         Args:
             level: The level being attempted
             tries: Number of tries for this level
             
         Returns:
-            float: Calculated score (higher is better)
+            float: Always returns 0 as scoring is disabled
         """
-        base_score = level * 1000  # Higher levels are worth more
-        try_penalty = max(0, (tries - 1) * 50)  # Penalty for multiple attempts
-        return max(100, base_score - try_penalty)  # Minimum score of 100 
+        return 0.0 
 
 # Singleton instance
 level_manager = LevelManager()
