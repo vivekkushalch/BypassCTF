@@ -11,7 +11,7 @@ const submitPassword = async ({ password, authToken }) => {
     password,
     auth_token: authToken,
   });
-  console.log(response.data);
+  // console.log(response.data);
   return response.data;
 };
 
