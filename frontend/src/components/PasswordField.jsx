@@ -11,7 +11,7 @@ const submitPassword = async ({ password, authToken }) => {
     password,
     auth_token: authToken,
   });
-  // console.log(response.data);
+  console.log(response.data);
   return response.data;
 };
 
@@ -27,15 +27,15 @@ const Password = ({ showLeaderboard, onGameComplete }) => {
       setLevelData(data);
       localStorage.setItem("password", password);
 
-      const { failed_level, passed_level } = data;
+      // const { failed_level, passed_level } = data;
 
-      // const isCurrentLevelEmpty = Object.keys(current_level || {}).length === 0;
-      const isFailedLevelEmpty =
-        Array.isArray(failed_level) && failed_level.length === 0;
-      const hasAllLevelsPassed =
-        Array.isArray(passed_level) && passed_level.length === 20;
+      // // const isCurrentLevelEmpty = Object.keys(current_level || {}).length === 0;
+      // const isFailedLevelEmpty =
+      //   Array.isArray(failed_level) && failed_level.length === 0;
+      // const hasAllLevelsPassed =
+      //   Array.isArray(passed_level) && passed_level.length === 20;
 
-      if (isFailedLevelEmpty && hasAllLevelsPassed) {
+      if (data.current_level.level===21) {
         // All 20 levels completed - trigger game completion
         onGameComplete();
       }
@@ -210,20 +210,27 @@ const Password = ({ showLeaderboard, onGameComplete }) => {
                             />
                           </div>
                         )}
-                      {/* iframe */}
+                      {/* Responsive iframe for Level 19 */}
                       {levelData.current_level.level === 19 &&
                         !levelData.passed_levels?.some(
                           (level) => level.level === 19
                         ) && (
-                          <div className="mt-4 flex justify-center">
-                            <iframe
-                              src="https://www.google.com/maps/embed?pb=!4v1596371489650!6m8!1m7!1sCAoSLEFGMVFpcE5pVm5rQUp1SFluVnpXODJ0a0tpa2JXbnlUcEN3V25ub1VXM0N3!2m2!1d2.9760731!2d99.0698462!3f90!4f0!5f0.7820865974627469"
-                              width="450"
-                              height="534"
-                              style="border:0;"
-                              allowfullscreen=""
-                              loading="lazy"
-                            ></iframe>
+                          <div className="mt-4">
+                            <div className="relative w-full max-w-2xl mx-auto">
+                              {/* Responsive container with aspect ratio */}
+                              <div className="relative w-full" style={{ paddingBottom: '75%' }}>
+                                <iframe
+                                  src="https://www.google.com/maps/embed?pb=!4v1596371489650!6m8!1m7!1sCAoSLEFGMVFpcE5pVm5rQUp1SFluVnpXODJ0a0tpa2JXbnlUcEN3V25ub1VXM0N3!2m2!1d2.9760731!2d99.0698462!3f90!4f0!5f0.7820865974627469"
+                                  className="absolute top-0 left-0 w-full h-full border-2 border-cyan-400 bg-cyan-900/10"
+                                  style={{border: '2px solid #22d3ee'}}
+                                  allowFullScreen=""
+                                  loading="lazy"
+                                  title="Level 19 Map Challenge"
+                                />
+                              </div>
+                              {/* Optional: Add a glow effect matching the theme */}
+                              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 opacity-20 blur-sm -z-10 rounded"></div>
+                            </div>
                           </div>
                         )}
                     </div>
