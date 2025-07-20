@@ -4,8 +4,13 @@ import axios from "axios";
 import Password from "./components/PasswordField";
 import GameLeaderboard from "./components/GameLeaderboard";
 import FinalSequence from "./components/FinalSeq";
+import ReactGA from "react-ga4"
 
 function App() {
+  useEffect(()=>{
+    ReactGA.initialize("G-2XGWTC30K7")
+    // ReactGA.send({hitType : "pageview", page:window.location.pathname, title:"App.jsx"})
+  },[])
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
   const [isRegistered, setIsRegistered] = useState(false);
@@ -112,30 +117,30 @@ function App() {
   };
 
   // Function to handle final sequence completion
-  const handleFinalSequenceComplete = () => {
-    setShowFinalSequence(false);
+  // const handleFinalSequenceComplete = () => {
+  //   setShowFinalSequence(false);
     
-    // Show funny alert message
-    setTimeout(() => {
-      alert("🚨 SECURITY BREACH DETECTED! 🚨\n\nOur server has been compromised! You've successfully hacked through all our defenses.\n\nSorry for the inconvenience, but our systems need to be rebuilt from scratch.\n\nTry again to catch up to the leaderboard and show everyone who's the ultimate hacker! 😄");
+  //   // Show funny alert message
+  //   setTimeout(() => {
+  //     alert("🚨 SECURITY BREACH DETECTED! 🚨\n\nOur server has been compromised! You've successfully hacked through all our defenses.\n\nSorry for the inconvenience, but our systems need to be rebuilt from scratch.\n\nTry again to catch up to the leaderboard and show everyone who's the ultimate hacker! 😄");
       
-      // Reset the game
-      resetGame();
-    }, 500);
-  };
+  //     // Reset the game
+  //     resetGame();
+  //   }, 500);
+  // };
 
   // Function to reset the game
-  const resetGame = () => {
-    // Clear password-related data from localStorage
-    localStorage.removeItem("password");
+  // const resetGame = () => {
+  //   // Clear password-related data from localStorage
+  //   localStorage.removeItem("password");
     
-    // Reset game states
-    setGameCompleted(false);
-    setShowFinalSequence(false);
+  //   // Reset game states
+  //   setGameCompleted(false);
+  //   setShowFinalSequence(false);
     
-    // Force Password component to reset by re-rendering
-    window.location.reload();
-  };
+  //   // Force Password component to reset by re-rendering
+  //   window.location.reload();
+  // };
 
   const handleAnswer = (answer) => {
     if (answer) {
@@ -219,7 +224,7 @@ function App() {
 
   // Show FinalSequence if game is completed
   if (showFinalSequence) {
-    return <FinalSequence onComplete={handleFinalSequenceComplete} />;
+    return <FinalSequence/>;
   }
 
   return (
@@ -268,7 +273,7 @@ function App() {
                 onClick={handleLeaderboardToggle}
                 className="border border-yellow-400 bg-yellow-900/20 text-yellow-400 px-3 py-1 font-mono font-bold uppercase tracking-wider hover:bg-yellow-900/40 transition-all duration-300 text-xs hover:scale-105 transform hover:border-yellow-300 hover:shadow-lg hover:shadow-yellow-400/30"
               >
-                {showLeaderboard ? "HIDE" : "BOARD"}
+                {showLeaderboard ? "LEADERBOARD" : "LEADERBOARD"}
               </button>
               <div className="px-3 py-1 border border-slate-700 bg-cyan-900/20 transition-all duration-300 hover:border-cyan-400 hover:bg-cyan-900/30">
                 <span className="text-cyan-500 text-sm font-mono">
@@ -480,7 +485,7 @@ function App() {
                 {getTourSteps(isFromBIT)[tourStep].showBoardIcon && (
                   <div className="mb-4 flex justify-center">
                     <div className="border border-yellow-400 bg-yellow-900/20 text-yellow-400 px-3 py-1 font-mono font-bold uppercase tracking-wider text-xs transform transition-all duration-300 hover:scale-105">
-                      BOARD
+                      LEADERBOARD
                     </div>
                   </div>
                 )}

@@ -1,64 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect,useState } from "react";
 
-const FinalSequence = ({ onComplete }) => {
-  const [phase, setPhase] = useState('blackout'); // blackout, typing, crash, gif, completed
+const FinalSequence = () => {
+  const [phase, setPhase] = useState('typing'); // typing, glitch, popup, whitescreen
   const [typedText, setTypedText] = useState('');
   const [isGlitching, setIsGlitching] = useState(false);
-  const [crashIntensity, setCrashIntensity] = useState(0);
-  const [hackerText, setHackerText] = useState('');
-  const [matrixChars, setMatrixChars] = useState([]);
+  const [glitchIntensity, setGlitchIntensity] = useState(0);
 
   const ACCESS_GRANTED = 'ACCESS GRANTED';
-  const HACKER_MESSAGES = [
-    'PENETRATING FIREWALL...',
-    'BYPASSING SECURITY PROTOCOLS...',
-    'DECRYPTING DATABASE...',
-    'INJECTING PAYLOAD...',
-    'ESCALATING PRIVILEGES...',
-    'ACCESSING MAINFRAME...',
-    'DOWNLOADING CLASSIFIED DATA...',
-    'ERASING DIGITAL FOOTPRINTS...'
-  ];
 
   useEffect(() => {
-    // Start sequence immediately when component mounts
+    // Clear localStorage data immediately when component mounts
+    clearStorageData();
+    // Start the sequence
     startSequence();
-    // Initialize matrix effect
-    initializeMatrix();
   }, []);
 
-  // Initialize matrix background effect
-  const initializeMatrix = () => {
-    const chars = [];
-    for (let i = 0; i < 50; i++) {
-      chars.push({
-        id: i,
-        char: String.fromCharCode(0x30A0 + Math.random() * 96),
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        speed: 0.5 + Math.random() * 2
-      });
+  const clearStorageData = () => {
+    try {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('password');
+      // Clear any other relevant data if needed
+      console.log('Storage data cleared');
+    } catch (error) {
+      console.log('Storage clear attempted');
     }
-    setMatrixChars(chars);
   };
 
   const startSequence = () => {
-    setPhase('blackout');
+    setPhase('typing');
     setTypedText('');
     setIsGlitching(false);
-    setCrashIntensity(0);
+    setGlitchIntensity(0);
 
-    // Add hacker text cycling during blackout
-    const hackerInterval = setInterval(() => {
-      setHackerText(HACKER_MESSAGES[Math.floor(Math.random() * HACKER_MESSAGES.length)]);
-    }, 800);
-
-    // Phase 1: 5 seconds blackout
-    setTimeout(() => {
-      clearInterval(hackerInterval);
-      setPhase('typing');
-      startTyping();
-    }, 5000);
+    // Start typing animation
+    startTyping();
   };
 
   const startTyping = () => {
@@ -71,13 +46,13 @@ const FinalSequence = ({ onComplete }) => {
         // Start glitching after 'A' is typed (after "ACCESS ")
         if (index >= 7) {
           setIsGlitching(true);
-          setCrashIntensity(Math.min((index - 6) * 20, 100));
+          setGlitchIntensity(Math.min((index - 6) * 25, 100));
         }
         
-        // At 'T' (last character), trigger massive crash
+        // At last character, trigger massive glitch phase
         if (index === ACCESS_GRANTED.length - 1) {
           clearInterval(typeInterval);
-          triggerMassiveCrash();
+          triggerGlitchPhase();
         }
         
         index++;
@@ -85,231 +60,235 @@ const FinalSequence = ({ onComplete }) => {
     }, 300);
   };
 
-  const triggerMassiveCrash = () => {
-    setPhase('crash');
-    setCrashIntensity(100);
+  const triggerGlitchPhase = () => {
+    setPhase('glitch');
+    setGlitchIntensity(100);
     
-    // 10 seconds of intense crashing
+    // After 8 seconds of intense glitching, show popup
     setTimeout(() => {
-      setPhase('gif');
       setIsGlitching(false);
-      setCrashIntensity(0);
+      setPhase('popup');
       
-      // Display GIF for 8 seconds
+      // After 6 seconds, show white screen
       setTimeout(() => {
-        setPhase('completed');
-        // Call the onComplete callback to trigger the parent's game reset logic
-        if (onComplete) {
-          onComplete();
-        }
-      }, 8000);
-    }, 10000);
+        setPhase('whitescreen');
+        
+        // After 6 more seconds, reload the window
+        setTimeout(() => {
+          window.location.reload();
+        }, 6000);
+      }, 6000);
+    }, 8000);
   };
 
-  const renderGlitchLayers = () => {
+  const renderGlitchEffects = () => {
     if (!isGlitching) return null;
     
-    const layers = [];
-    for (let i = 0; i < 8; i++) {
-      layers.push(
+    const effects = [];
+    
+    // Glitch layers
+    for (let i = 0; i < 12; i++) {
+      effects.push(
         <div
-          key={i}
+          key={`glitch-${i}`}
           className="absolute inset-0 pointer-events-none"
           style={{
             background: `linear-gradient(${Math.random() * 360}deg, 
-              rgba(255, 0, 0, ${0.1 + Math.random() * 0.4}), 
-              rgba(0, 255, 0, ${0.1 + Math.random() * 0.4}), 
-              rgba(0, 0, 0, ${0.1 + Math.random() * 0.4}))`,
-            transform: `translate(${(Math.random() - 0.5) * 30}px, ${(Math.random() - 0.5) * 30}px) 
-                       rotate(${(Math.random() - 0.5) * 10}deg)`,
-            animation: `glitchMove ${0.05 + Math.random() * 0.15}s infinite`,
-            opacity: crashIntensity / 100,
-            mixBlendMode: 'screen'
+              rgba(255, 0, 0, ${0.1 + Math.random() * 0.5}), 
+              rgba(0, 255, 0, ${0.1 + Math.random() * 0.5}), 
+              rgba(0, 0, 255, ${0.1 + Math.random() * 0.3}))`,
+            transform: `translate(${(Math.random() - 0.5) * 50}px, ${(Math.random() - 0.5) * 50}px) 
+                       rotate(${(Math.random() - 0.5) * 15}deg)`,
+            opacity: glitchIntensity / 100,
+            mixBlendMode: Math.random() > 0.5 ? 'screen' : 'multiply',
+            animation: `glitchMove ${0.05 + Math.random() * 0.15}s infinite`
           }}
         />
       );
     }
-    return layers;
-  };
-
-  const renderCrashLines = () => {
-    if (phase !== 'crash') return null;
     
-    const lines = [];
-    for (let i = 0; i < 80; i++) {
-      lines.push(
+    // Static noise
+    for (let i = 0; i < 300; i++) {
+      effects.push(
         <div
-          key={i}
+          key={`noise-${i}`}
           className="absolute"
           style={{
-            width: `${20 + Math.random() * 80}%`,
-            height: `${Math.random() * 8 + 1}px`,
+            width: `${Math.random() * 6 + 1}px`,
+            height: `${Math.random() * 6 + 1}px`,
             top: `${Math.random() * 100}%`,
             left: `${Math.random() * 100}%`,
-            background: `rgb(${Math.random() * 255}, ${Math.random() < 0.5 ? Math.random() * 255 : 0}, ${Math.random() < 0.3 ? Math.random() * 255 : 0})`,
-            transform: `translateX(${Math.random() * 400 - 200}px) rotate(${Math.random() * 360}deg)`,
-            animation: `crashLine ${0.03 + Math.random() * 0.1}s infinite`,
-            opacity: 0.7 + Math.random() * 0.3
-          }}
-        />
-      );
-    }
-    return lines;
-  };
-
-  const renderStaticNoise = () => {
-    if (phase !== 'crash') return null;
-    
-    const noise = [];
-    for (let i = 0; i < 200; i++) {
-      noise.push(
-        <div
-          key={i}
-          className="absolute bg-white"
-          style={{
-            width: `${Math.random() * 4 + 1}px`,
-            height: `${Math.random() * 4 + 1}px`,
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            opacity: Math.random(),
+            background: Math.random() > 0.5 ? '#ffffff' : '#000000',
+            opacity: Math.random() * 0.8,
             animation: `staticNoise ${0.02 + Math.random() * 0.05}s infinite`
           }}
         />
       );
     }
-    return noise;
-  };
-
-  // Matrix rain effect for more hacker feeling
-  const renderMatrixRain = () => {
-    if (phase === 'completed') return null;
     
-    return matrixChars.map((char, index) => (
-      <div
-        key={char.id}
-        className="absolute text-green-400 font-mono text-sm opacity-20"
-        style={{
-          left: `${char.x}%`,
-          top: `${char.y}%`,
-          animation: `matrixFall ${char.speed}s linear infinite`,
-          animationDelay: `${index * 0.1}s`
-        }}
-      >
-        {char.char}
-      </div>
-    ));
+    // Scan lines
+    for (let i = 0; i < 100; i++) {
+      effects.push(
+        <div
+          key={`line-${i}`}
+          className="absolute"
+          style={{
+            width: '100%',
+            height: `${Math.random() * 4 + 1}px`,
+            top: `${Math.random() * 100}%`,
+            left: '0',
+            background: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.6)`,
+            transform: `translateX(${Math.random() * 400 - 200}px)`,
+            animation: `scanLine ${0.1 + Math.random() * 0.2}s infinite`
+          }}
+        />
+      );
+    }
+    
+    return effects;
   };
-
-  if (phase === 'completed') {
-    return null; // Component disappears after sequence
-  }
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex items-center justify-center overflow-hidden">
-      {/* Matrix rain background */}
-      <div className="absolute inset-0 overflow-hidden">
-        {renderMatrixRain()}
-      </div>
-      
-      {/* Glitch layers */}
-      {renderGlitchLayers()}
-      
-      {/* Crash effects */}
-      {renderCrashLines()}
-      {renderStaticNoise()}
-
-      {/* Blackout phase */}
-      {phase === 'blackout' && (
-        <div className="relative z-10">
-          <div className="text-green-400 text-lg sm:text-xl md:text-2xl font-mono animate-pulse px-4 text-center mb-4">
-            INITIALIZING SYSTEM...
-          </div>
-          {/* Scrolling hacker messages */}
-          <div className="text-green-300 text-sm sm:text-base font-mono px-4 text-center">
-            {hackerText}
-          </div>
-        </div>
-      )}
-
-      {/* Typing and crash phases */}
-      {(phase === 'typing' || phase === 'crash') && (
-        <div className="relative z-10 px-4 max-w-full">
-          <div 
-            className={`text-green-400 font-mono font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl tracking-widest ${
-              isGlitching ? 'animate-pulse' : ''
-            } text-center break-words`}
-            style={{
-              textShadow: isGlitching ? 
-                '0 0 20px #00ff00, 0 0 40px #00ff00, 0 0 60px #00ff00, 0 0 80px #00ff00' : 
-                '0 0 20px #00ff00',
-              transform: isGlitching ? 
-                `translate(${(Math.random() - 0.5) * 15}px, ${(Math.random() - 0.5) * 15}px) 
-                 rotate(${(Math.random() - 0.5) * 5}deg)` : 
-                'none',
-              filter: crashIntensity > 50 ? `blur(${crashIntensity / 50}px)` : 'none'
-            }}
-          >
-            {typedText.split('').map((char, index) => (
-              <span
-                key={index}
-                className={`inline-block ${
-                  isGlitching && index >= 7 ? 'animate-bounce' : ''
-                }`}
-                style={{
-                  color: isGlitching && index >= 7 ? 
-                    `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})` : 
-                    '#00ff00',
-                  transform: isGlitching && index >= 7 ? 
-                    `rotate(${(Math.random() - 0.5) * 20}deg) 
-                     scale(${0.6 + Math.random() * 0.8}) 
-                     translate(${(Math.random() - 0.5) * 10}px, ${(Math.random() - 0.5) * 10}px)` : 
-                    'none',
-                  animation: phase === 'crash' ? 
-                    `glitchChar ${0.05 + Math.random() * 0.1}s infinite` : 
-                    'none',
-                  textShadow: phase === 'crash' ? 
-                    `0 0 ${10 + Math.random() * 20}px rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})` : 
-                    'inherit'
-                }}
-              >
-                {char === ' ' ? '\u00A0' : char}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Crash overlay effects - black, green, red color scheme */}
-      {phase === 'crash' && (
-        <>
-          <div className="absolute inset-0 bg-red-900 opacity-15 animate-pulse" />
-          <div className="absolute inset-0 bg-green-900 opacity-12 animate-ping" />
-          <div className="absolute inset-0 bg-red-800 opacity-10 animate-bounce" />
-          <div className="absolute inset-0 bg-green-800 opacity-8" 
-               style={{ animation: 'flash 0.1s infinite' }} />
-        </>
-      )}
-
-      {/* GIF phase */}
-      {phase === 'gif' && (
-        <div className="relative flex items-center justify-center w-full h-full">
-          <div className="relative">
-            {/* Adjusted GIF dimensions to prevent cutting and maintain aspect ratio */}
-            <img
-              src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMGs2bXlpM2dzbzhrdjloMWEwazVmZm4zZWJmeWJ0eTA0YjB2dzFrNCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Nx0rz3jtxtEre/giphy.gif"
-              alt="Access Granted"
-              className="w-72 h-54 sm:w-96 sm:h-72 md:w-[500px] md:h-[375px] lg:w-[600px] lg:h-[450px] xl:w-[700px] xl:h-[525px] object-contain rounded-2xl shadow-2xl animate-pulse"
+    <div className="fixed inset-0 z-50 overflow-hidden">
+      {/* Typing Phase */}
+      {phase === 'typing' && (
+        <div className="absolute inset-0 bg-black flex items-center justify-center">
+          {/* Glitch effects during typing */}
+          {isGlitching && renderGlitchEffects()}
+          
+          <div className="relative z-10 px-4 max-w-full">
+            <div 
+              className={`text-green-400 font-mono font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl tracking-widest ${
+                isGlitching ? 'animate-pulse' : ''
+              } text-center break-words`}
               style={{
-                filter: 'brightness(1.2) contrast(1.1) saturate(1.2)',
-                boxShadow: '0 0 50px rgba(0, 255, 0, 0.5), 0 0 100px rgba(0, 255, 0, 0.3)'
+                textShadow: isGlitching ? 
+                  '0 0 20px #00ff00, 0 0 40px #00ff00, 0 0 60px #00ff00' : 
+                  '0 0 20px #00ff00',
+                transform: isGlitching ? 
+                  `translate(${(Math.random() - 0.5) * 15}px, ${(Math.random() - 0.5) * 15}px) 
+                   rotate(${(Math.random() - 0.5) * 5}deg)` : 
+                  'none',
+                filter: glitchIntensity > 50 ? `blur(${glitchIntensity / 50}px)` : 'none'
               }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 via-black/20 to-red-600/20 rounded-2xl blur-xl animate-ping" />
-            <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 via-black/10 to-red-600/10 rounded-2xl blur-2xl animate-pulse" />
+            >
+              {typedText.split('').map((char, index) => (
+                <span
+                  key={index}
+                  className={`inline-block ${
+                    isGlitching && index >= 7 ? 'animate-bounce' : ''
+                  }`}
+                  style={{
+                    color: isGlitching && index >= 7 ? 
+                      `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})` : 
+                      '#00ff00',
+                    transform: isGlitching && index >= 7 ? 
+                      `rotate(${(Math.random() - 0.5) * 20}deg) 
+                       scale(${0.6 + Math.random() * 0.8}) 
+                       translate(${(Math.random() - 0.5) * 10}px, ${(Math.random() - 0.5) * 10}px)` : 
+                      'none',
+                    animation: isGlitching && index >= 7 ? 
+                      `glitchChar ${0.05 + Math.random() * 0.1}s infinite` : 
+                      'none',
+                    textShadow: isGlitching && index >= 7 ? 
+                      `0 0 ${10 + Math.random() * 20}px rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})` : 
+                      'inherit'
+                  }}
+                >
+                  {char === ' ' ? '\u00A0' : char}
+                </span>
+              ))}
+            </div>
           </div>
-          {/* Success message overlay - bold and moved to top */}
-          <div className="absolute top-16 left-1/2 transform -translate-x-1/2 text-green-400 font-mono text-xl sm:text-2xl font-bold animate-pulse px-4 text-center">
-            SYSTEM COMPROMISED
+        </div>
+      )}
+
+      {/* Glitch Phase */}
+      {phase === 'glitch' && (
+        <div className="absolute inset-0 bg-black flex items-center justify-center">
+          {/* Intense glitch effects */}
+          {renderGlitchEffects()}
+          
+          {/* Main glitch overlay */}
+          <div className="absolute inset-0 bg-red-900 opacity-20 animate-pulse" />
+          <div className="absolute inset-0 bg-green-900 opacity-15 animate-ping" />
+          <div 
+            className="absolute inset-0 bg-blue-900 opacity-10" 
+            style={{ animation: 'flash 0.1s infinite' }} 
+          />
+          
+          {/* Show the complete ACCESS GRANTED text with heavy glitching */}
+          <div className="relative z-10 text-center px-4">
+            <div 
+              className="text-green-400 font-mono font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl tracking-widest animate-pulse break-words"
+              style={{
+                textShadow: '0 0 30px #00ff00, 0 0 60px #00ff00, 0 0 90px #00ff00',
+                transform: `translate(${(Math.random() - 0.5) * 25}px, ${(Math.random() - 0.5) * 25}px) 
+                           rotate(${(Math.random() - 0.5) * 10}deg)`,
+                filter: `blur(${Math.random() * 3}px)`
+              }}
+            >
+              {ACCESS_GRANTED.split('').map((char, index) => (
+                <span
+                  key={index}
+                  className="inline-block animate-bounce"
+                  style={{
+                    color: `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`,
+                    transform: `rotate(${(Math.random() - 0.5) * 30}deg) 
+                               scale(${0.5 + Math.random() * 1}) 
+                               translate(${(Math.random() - 0.5) * 20}px, ${(Math.random() - 0.5) * 20}px)`,
+                    animation: `glitchChar ${0.03 + Math.random() * 0.07}s infinite`,
+                    textShadow: `0 0 ${15 + Math.random() * 25}px rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`
+                  }}
+                >
+                  {char === ' ' ? '\u00A0' : char}
+                </span>
+              ))}
+            </div>
+            <div 
+              className="text-red-500 font-mono text-lg sm:text-xl mt-4 animate-bounce"
+              style={{
+                textShadow: '0 0 15px #ff0000',
+                transform: `translate(${(Math.random() - 0.5) * 15}px, ${(Math.random() - 0.5) * 15}px)`
+              }}
+            >
+              SYSTEM OVERLOAD
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup Phase */}
+      {phase === 'popup' && (
+        <div className="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center">
+          <div className="bg-red-900 border-2 border-red-500 rounded-lg p-8 max-w-md mx-4 text-center shadow-2xl">
+            <div className="text-red-400 text-2xl sm:text-3xl font-bold mb-4 animate-pulse">
+              ⚠️ ALERT ⚠️
+            </div>
+            <div className="text-white text-lg sm:text-xl font-semibold">
+              Sorry, our system is compromised.
+            </div>
+            <div className="text-red-300 text-base sm:text-lg mt-2">
+              You are late to BYPA$$ it.Now you can play for the leaderboard
+            </div>
+            <div className="mt-6 w-full bg-red-800 rounded-full h-2">
+              <div 
+                className="bg-red-500 h-2 rounded-full animate-pulse"
+                style={{ width: '100%' }}
+              ></div>
+            </div>
+            <div className="text-red-400 text-sm mt-2 opacity-75">
+              Initiating emergency protocols...
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* White Screen Phase */}
+      {phase === 'whitescreen' && (
+        <div className="absolute inset-0 bg-white flex items-center justify-center">
+          <div className="text-gray-400 text-xl font-mono animate-pulse">
+            Reloading...
           </div>
         </div>
       )}
@@ -318,56 +297,48 @@ const FinalSequence = ({ onComplete }) => {
       <style jsx>{`
         @keyframes glitchMove {
           0% { transform: translate(0, 0) skew(0deg) scale(1); }
-          20% { transform: translate(-5px, 5px) skew(2deg) scale(1.02); }
-          40% { transform: translate(5px, -5px) skew(-2deg) scale(0.98); }
-          60% { transform: translate(-5px, -5px) skew(1deg) scale(1.01); }
-          80% { transform: translate(5px, 5px) skew(-1deg) scale(0.99); }
+          20% { transform: translate(-10px, 10px) skew(5deg) scale(1.05); }
+          40% { transform: translate(10px, -10px) skew(-5deg) scale(0.95); }
+          60% { transform: translate(-10px, -10px) skew(3deg) scale(1.02); }
+          80% { transform: translate(10px, 10px) skew(-3deg) scale(0.98); }
           100% { transform: translate(0, 0) skew(0deg) scale(1); }
         }
         
-        @keyframes crashLine {
+        @keyframes staticNoise {
+          0% { opacity: 1; }
+          25% { opacity: 0; }
+          50% { opacity: 1; }
+          75% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        
+        @keyframes scanLine {
           0% { 
-            transform: translateX(-200px) rotate(0deg); 
+            transform: translateX(-100%); 
             opacity: 1; 
           }
           50% { 
-            transform: translateX(0px) rotate(180deg); 
+            transform: translateX(0%); 
             opacity: 0.8; 
           }
           100% { 
-            transform: translateX(200px) rotate(360deg); 
+            transform: translateX(100%); 
             opacity: 0; 
           }
         }
         
         @keyframes glitchChar {
           0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-          10% { transform: translate(-5px, 5px) rotate(2deg) scale(1.1); }
-          20% { transform: translate(5px, -5px) rotate(-2deg) scale(0.9); }
-          30% { transform: translate(-5px, -5px) rotate(1deg) scale(1.05); }
-          40% { transform: translate(5px, 5px) rotate(-1deg) scale(0.95); }
-          50% { transform: translate(-3px, 3px) rotate(3deg) scale(1.02); }
-          60% { transform: translate(3px, -3px) rotate(-3deg) scale(0.98); }
-          70% { transform: translate(-3px, -3px) rotate(2deg) scale(1.03); }
-          80% { transform: translate(3px, 3px) rotate(-2deg) scale(0.97); }
-          90% { transform: translate(-2px, 2px) rotate(1deg) scale(1.01); }
+          10% { transform: translate(-8px, 8px) rotate(5deg) scale(1.2); }
+          20% { transform: translate(8px, -8px) rotate(-5deg) scale(0.8); }
+          30% { transform: translate(-8px, -8px) rotate(3deg) scale(1.1); }
+          40% { transform: translate(8px, 8px) rotate(-3deg) scale(0.9); }
+          50% { transform: translate(-5px, 5px) rotate(8deg) scale(1.05); }
+          60% { transform: translate(5px, -5px) rotate(-8deg) scale(0.95); }
+          70% { transform: translate(-5px, -5px) rotate(4deg) scale(1.08); }
+          80% { transform: translate(5px, 5px) rotate(-4deg) scale(0.92); }
+          90% { transform: translate(-3px, 3px) rotate(2deg) scale(1.02); }
           100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-        }
-        
-        @keyframes staticNoise {
-          0% { opacity: 1; }
-          50% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-        
-        @keyframes flash {
-          0%, 100% { opacity: 0.08; }
-          50% { opacity: 0.2; }
-        }
-        
-        @keyframes matrixFall {
-          0% { transform: translateY(-100vh); opacity: 1; }
-          100% { transform: translateY(100vh); opacity: 0; }
         }
       `}</style>
     </div>

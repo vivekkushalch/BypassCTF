@@ -11,11 +11,11 @@ const submitPassword = async ({ password, authToken }) => {
     password,
     auth_token: authToken,
   });
-  console.log(response.data);
+  // console.log(response.data);
   return response.data;
 };
 
-const Password = ({ showLeaderboard }) => {
+const Password = ({ showLeaderboard, onGameComplete }) => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
   const [password, setPassword] = useState("");
@@ -26,6 +26,19 @@ const Password = ({ showLeaderboard }) => {
     onSuccess: (data) => {
       setLevelData(data);
       localStorage.setItem("password", password);
+
+      const { failed_level, passed_level } = data;
+
+      // const isCurrentLevelEmpty = Object.keys(current_level || {}).length === 0;
+      const isFailedLevelEmpty =
+        Array.isArray(failed_level) && failed_level.length === 0;
+      const hasAllLevelsPassed =
+        Array.isArray(passed_level) && passed_level.length === 20;
+
+      if (isFailedLevelEmpty && hasAllLevelsPassed) {
+        // All 20 levels completed - trigger game completion
+        onGameComplete();
+      }
     },
     onError: (err) => {
       console.error("Password submit failed", err);
@@ -55,7 +68,9 @@ const Password = ({ showLeaderboard }) => {
     const authToken = localStorage.getItem("authToken");
 
     //rate limit
-    mutate({ password: newPassword, authToken });
+    setTimeout(() => {
+      mutate({ password: newPassword, authToken });
+    }, 500);
   };
   const handleMazeComplete = (completionPassword) => {
     // The completionPassword already contains original password + "maze_completed"
@@ -72,7 +87,7 @@ const Password = ({ showLeaderboard }) => {
       {/* Hero Section */}
       <div className="text-center mb-12">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 bg-clip-text text-transparent mb-4 font-mono tracking-wide">
-          PASSWORD CHALLENGE
+          BYPASS
         </h1>
         <p className="text-cyan-300 text-lg font-mono tracking-wider uppercase">
           &gt; Enter password to access mainframe &lt;
@@ -193,6 +208,22 @@ const Password = ({ showLeaderboard }) => {
                               className="w-48 h-48 object-contain"
                               style={{ imageRendering: "pixelated" }}
                             />
+                          </div>
+                        )}
+                      {/* iframe */}
+                      {levelData.current_level.level === 19 &&
+                        !levelData.passed_levels?.some(
+                          (level) => level.level === 19
+                        ) && (
+                          <div className="mt-4 flex justify-center">
+                            <iframe
+                              src="https://www.google.com/maps/embed?pb=!4v1596371489650!6m8!1m7!1sCAoSLEFGMVFpcE5pVm5rQUp1SFluVnpXODJ0a0tpa2JXbnlUcEN3V25ub1VXM0N3!2m2!1d2.9760731!2d99.0698462!3f90!4f0!5f0.7820865974627469"
+                              width="450"
+                              height="534"
+                              style="border:0;"
+                              allowfullscreen=""
+                              loading="lazy"
+                            ></iframe>
                           </div>
                         )}
                     </div>
