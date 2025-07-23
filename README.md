@@ -9,17 +9,16 @@
   <img src="https://img.shields.io/github/watchers/vivekkushalch/bypass?style=social" alt="GitHub watchers">
 </div>
 
+<div align="center">
+  <a href="https://bypassctf.vercel.app/" target="_blank">
+    <img src="https://img.shields.io/badge/🎮%20Play%20Now-brightgreen?style=for-the-badge&logo=gamepad" alt="Play Live">
+  </a>
+</div>
+
 <br>
 
 A cybersecurity puzzle game where players need to find hidden passwords and bypass security systems using hacking skills and creative thinking.
 
-## 🌐 Live Demo
-
-<div align="center">
-  <a href="https://bypassctf.vercel.app/" target="_blank">
-    <img src="https://img.shields.io/badge/🎮%20Play%20Now-Live%20Demo-brightgreen?style=for-the-badge&logo=gamepad" alt="Play Live Demo">
-  </a>
-</div>
 
 
 
@@ -120,8 +119,9 @@ The frontend will be available at: `http://localhost:5173`
 
 ### 🎮 Game Interface
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/93915b85-47d5-4e13-8d39-2228e2005380" alt="Game Interface" width="600" height="600" />
+  <img src="https://github.com/user-attachments/assets/a503f263-8d33-488a-b229-0dd293846da9" alt="Game Interface" width="600" height="600" />
 </div>
+
 
 <br>
 
