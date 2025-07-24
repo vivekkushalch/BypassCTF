@@ -4,90 +4,217 @@ Test Script for Level System
 This script tests the level validation and scorecard functionality.
 It simulates user interactions with different levels and verifies the results.
 """
-import sys
+import unittest
 import os
 import json
-from typing import Dict, Any, List, Tuple
-
-# Add the current directory to the Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Import the level manager
+import time
+from fastapi.testclient import TestClient
+from fastapi import status
+from main import app, get_db, save_db, create_access_token
 from level_manager import level_manager
-from user_scorecard import scorecard_manager
 
-class TestRunner:
-    """Test runner for the level system."""
-    
-    def __init__(self):
-        """Initialize test runner with test users."""
-        self.test_users = {
-            "test_user_1": {
-                "current_level": {"level": 1, "extras": {}},
-                "passed_levels": [],
-                "failed_levels": []
-            },
-            "test_user_2": {
-                "current_level": {"level": 1, "extras": {}},
-                "passed_levels": [],
-                "failed_levels": []
-            }
-        }
-        self.setup_test_environment()
-    
-    def setup_test_environment(self) -> None:
-        """Set up the test environment by saving test users to the database."""
-        db_path = os.path.join(os.path.dirname(__file__), 'db.json')
-        with open(db_path, 'w', encoding='utf-8') as f:
-            json.dump(self.test_users, f, indent=2)
-    
-    def run_tests(self) -> None:
-        """Run all test cases."""
-        print("=== Starting Level System Tests ===\n")
+class TestLevelSystem(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Set up test database
+        cls.test_db = "test_db.json"
+        os.environ["DB_FILE"] = cls.test_db
         
-        tests = [
-            self.test_level_1,
-            self.test_level_2,
-            self.test_level_3,
-            self.test_scorecard
+        # Initialize test client
+        cls.client = TestClient(app)
+        
+        # Create test users with auth tokens
+        cls.test_users = [
+            {
+                "user_id": "test_user1", 
+                "current_level": 1, 
+                "passed_levels": [], 
+                "failed_levels": [],
+                "registered_at": "2023-01-01T00:00:00.000000",
+                "auth_token": create_access_token("test_user1")
+            },
+            {
+                "user_id": "test_user2", 
+                "current_level": 2, 
+                "passed_levels": [1], 
+                "failed_levels": [],
+                "registered_at": "2023-01-01T00:00:00.000000",
+                "auth_token": create_access_token("test_user2")
+            },
         ]
         
-        for test in tests:
-            test()
+        # Initialize test database with proper schema
+        db = {
+            "_global": {
+                "levels": {
+                    "1": {"password": "password1", "description": "Level 1"},
+                    "2": {"password": "password2", "description": "Level 2"},
+                    "3": {"password": "password3", "description": "Level 3"},
+                }
+            },
+            "users": {}
+        }
         
-        print("\n=== All Tests Completed ===")
+        # Add test users to database
+        for user in cls.test_users:
+            user_data = {
+                "current_level": user["current_level"],
+                "level_states": {},
+                "passed_levels": user["passed_levels"],
+                "failed_levels": user["failed_levels"],
+                "registered_at": user["registered_at"],
+                "auth_token": user["auth_token"],
+                "initialized": True
+            }
+            db["users"][user["user_id"]] = user_data
+        
+        # Save test database
+        with open(cls.test_db, 'w') as f:
+            json.dump(db, f)
     
-    def test_level_1(self) -> None:
-        """Test Level 1 functionality."""
-        print("\n--- Testing Level 1 ---")
-        user_id = "test_user_1"
+    def setUp(self):
+        # Reset test database before each test
+        self.setUpClass()
+    
+    def test_register_user(self):
+        # Test new user registration
+        response = self.client.post("/register", json={"user_id": "new_user"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["user_id"], "new_user")
+        self.assertEqual(data["current_level"]["level"], 1)
+        self.assertEqual(data["passed_levels"], [])
+        self.assertEqual(data["failed_levels"], [])
+        self.assertIn("auth_token", data)
         
-        # Test with wrong password
-        print("\nTest 1.1: Wrong password")
-        result = level_manager.verify_password(user_id, "wrongpass", 1)
-        self.print_result(
-            "1.1", 
-            not result["passed"] and 1 in result["failed"], 
-            "Should fail with wrong password"
+        # Verify user was added to the database
+        db = get_db()
+        self.assertIn("new_user", db["users"])
+        self.assertEqual(db["users"]["new_user"]["current_level"], 1)
+    
+    def test_register_existing_user(self):
+        # Test registering an existing user
+        response = self.client.post(
+            "/register", 
+            json={"user_id": "test_user1"}
         )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["user_id"], "test_user1")
+        self.assertEqual(data["current_level"]["level"], 1)
+    
+    def test_submit_password_correct(self):
+        # Get auth token for test user
+        auth_token = self.test_users[0]["auth_token"]
         
-        # Test with correct password
-        print("\nTest 1.2: Correct password")
-        result = level_manager.verify_password(user_id, "welcome123", 1)
-        self.print_result(
-            "1.2", 
-            1 in result["passed"], 
-            "Should pass with correct password"
+        # Test submitting correct password
+        response = self.client.post(
+            "/submit", 
+            json={
+                "auth_token": auth_token,
+                "password": "password1"
+            }
         )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertTrue(data["message"].startswith("Password verified"))
         
-        # Verify level progression
-        print("\nTest 1.3: Level progression")
-        user_data = level_manager._get_user_data(user_id)
-        self.print_result(
-            "1.3",
-            user_data["current_level"]["level"] == 2 and 1 in user_data["passed_levels"],
-            "Should progress to level 2 after passing level 1"
+        # Check if user's level was updated
+        db = get_db()
+        user_data = db["users"].get("test_user1")
+        self.assertIsNotNone(user_data)
+        self.assertIn(1, user_data.get("passed_levels", []))
+        self.assertEqual(user_data.get("current_level"), 2)  # Should advance to next level
+    
+    def test_submit_password_incorrect(self):
+        # Get auth token for test user
+        auth_token = self.test_users[0]["auth_token"]
+        
+        # Test submitting incorrect password
+        response = self.client.post(
+            "/submit", 
+            json={
+                "auth_token": auth_token,
+                "password": "wrong_password"
+            }
         )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertTrue(data["message"].startswith("Password verification failed"))
+        
+        # Check if failed attempt was recorded
+        db = get_db()
+        user_data = db["users"].get("test_user1")
+        self.assertIsNotNone(user_data)
+        failed_levels = user_data.get("failed_levels", [])
+        self.assertGreater(len(failed_levels), 0)
+        
+        # Check if failed level has the correct structure
+        failed_level = next((f for f in failed_levels if isinstance(f, dict) and f.get("level") == 1), None)
+        self.assertIsNotNone(failed_level)
+        self.assertEqual(failed_level.get("attempts"), 1)
+        self.assertIn("last_attempt", failed_level)
+    
+    def test_leaderboard(self):
+        # Test getting leaderboard
+        response = self.client.get("/leaderboard")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        leaderboard = response.json()
+        self.assertIsInstance(leaderboard, list)
+        
+        # Check if test users are in the leaderboard
+        user_ids = [entry["user_id"] for entry in leaderboard]
+        self.assertIn("test_user1", user_ids)
+        self.assertIn("test_user2", user_ids)
+        
+        # Verify leaderboard sorting (user2 should be ranked higher since they've passed a level)
+        user1_rank = next((u["rank"] for u in leaderboard if u["user_id"] == "test_user1"), None)
+        user2_rank = next((u["rank"] for u in leaderboard if u["user_id"] == "test_user2"), None)
+        self.assertIsNotNone(user1_rank)
+        self.assertIsNotNone(user2_rank)
+        self.assertLess(user2_rank, user1_rank)  # user2 should be ranked higher
+    
+    def test_user_rank(self):
+        # Test getting specific user's rank
+        response = self.client.get("/leaderboard/test_user1")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user_rank = response.json()
+        self.assertEqual(user_rank["user_id"], "test_user1")
+        self.assertIn("rank", user_rank)
+        self.assertIn("score", user_rank)
+        self.assertIn("current_level", user_rank)
+        self.assertIn("last_updated", user_rank)
+    
+    def test_concurrent_updates(self):
+        """Test that concurrent updates don't corrupt the database"""
+        # This is a simple test to verify that our atomic file writing works
+        # In a real app, you'd want more sophisticated concurrency testing
+        
+        # Create a new user
+        user_id = f"concurrent_test_{int(time.time())}"
+        response = self.client.post("/register", json={"user_id": user_id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        auth_token = response.json()["auth_token"]
+        
+        # Make several concurrent updates
+        for i in range(1, 4):
+            response = self.client.post(
+                "/submit",
+                json={
+                    "auth_token": auth_token,
+                    "password": f"password{i}"  # Will pass level 1, 2, 3
+                }
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Verify final state
+        db = get_db()
+        user_data = db["users"].get(user_id)
+        self.assertIsNotNone(user_data)
+        self.assertEqual(user_data["current_level"], 4)  # Should be on level 4 (or max level + 1)
+        self.assertIn(1, user_data["passed_levels"])
+        self.assertIn(2, user_data["passed_levels"])
+        self.assertIn(3, user_data["passed_levels"])
     
     def test_level_2(self) -> None:
         """Test Level 2 functionality."""
@@ -95,20 +222,14 @@ class TestRunner:
         user_id = "test_user_1"
         
         # Test with invalid passwords
-        invalid_passwords: List[Tuple[str, str]] = [
-            ("short", "Too short"),
-            ("nouppercase1!", "No uppercase"),
-            ("NOLOWERCASE1!", "No lowercase"),
-            ("NoSpecialChar1", "No special character")
-        ]
-        
-        for i, (pwd, desc) in enumerate(invalid_passwords, 1):
-            print(f"\nTest 2.{i}: Invalid password - {desc}")
-            result = level_manager.verify_password(user_id, pwd, 2)
+        invalid_passwords = ["password0", "password2", "password3"]
+        for i, password in enumerate(invalid_passwords, 1):
+            print(f"\nTest 2.{i}: Invalid password")
+            result = level_manager.verify_password(user_id, password, 2)
             self.print_result(
                 f"2.{i}", 
                 2 in result.get("failed", []), 
-                f"Should fail with {desc}"
+                f"Should fail with {password}"
             )
         
         # Test with valid password
@@ -191,15 +312,14 @@ class TestRunner:
         color_code = "\033[92m" if condition else "\033[91m"
         print(f"{test_id}: {color_code}{status}\033[0m - {message}")
 
-def main() -> None:
-    """Main function to run the tests."""
-    # Clear any existing test data
-    if os.path.exists('db.json'):
-        os.remove('db.json')
-    
-    # Run tests
-    test_runner = TestRunner()
-    test_runner.run_tests()
+    @classmethod
+    def tearDownClass(cls):
+        # Clean up test database
+        if os.path.exists(cls.test_db):
+            try:
+                os.remove(cls.test_db)
+            except:
+                pass
 
 if __name__ == "__main__":
-    main()
+    unittest.main()

@@ -4,7 +4,7 @@ class Level9(BaseLevel):
     def __init__(self):
         super().__init__(
             level_id=9,
-            level_desc="Your password must include a Plus Code for BIT Mesra.",
+            level_desc="Your password must include a Google Map Plus Code for GDGOCBIT.",
         )
     
     def __init_bit_codes(self):

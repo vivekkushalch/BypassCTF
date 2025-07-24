@@ -5,9 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "api-analytics[fastapi]>=1.2.7",
     "fastapi>=0.116.1",
     "httpx>=0.28.1",
     "pyjwt>=2.10.1",
+    "pytz>=2025.2",
     "requests>=2.32.4",
+    "slowapi>=0.1.9",
     "uvicorn>=0.35.0",
 ]

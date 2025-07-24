@@ -9,7 +9,7 @@ class Level12(BaseLevel):
         
         super().__init__(
             level_id=12,
-            level_desc=f"Your password must be exactly the Pokemon name '{self.pokemon_name}'.",
+            level_desc=f"Your Password must match this pokemon name exactly.",
         )
     
     def _get_random_pokemon(self):
@@ -19,13 +19,14 @@ class Level12(BaseLevel):
         Returns:
             tuple: (pokemon_name, pokemon_image_url)
         """
-        pokemon_id = random.randint(1, 898)  # up to Gen 8
-        url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_id}"
-        response = requests.get(url)
-        data = response.json()
+        # pokemon_id = random.randint(1, 898)  # up to Gen 8
+        # url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_id}"
+        # response = requests.get(url)
+        # data = response.json()
 
-        name = data['name']
-        image_url = data['sprites']['other']['official-artwork']['front_default']
+        # name = data['name']
+        name = "psyduck"
+        image_url = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/54.png"
 
         return name, image_url
     
@@ -40,11 +41,14 @@ class Level12(BaseLevel):
         Returns:
             bool: True if password exactly matches the Pokemon name, False otherwise
         """
-        if 'pokemon_name' not in level_state:
-            return False
+        # if 'pokemon_name' not in level_state:
+        #     return False
         
+        # print(level_state['pokemon_name'].lower().strip())
+        # print(password.lower().strip())
         # Case-insensitive exact match comparison
-        return level_state['pokemon_name'].lower().strip() in password.lower().strip()
+        # return level_state['pokemon_name'].lower().strip() in password.lower().strip()
+        return "exactlyaggron" in password.lower().strip()
 
     def start(self):
         return{
