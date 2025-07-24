@@ -61,6 +61,16 @@ cd bypass
 
 ### 2. Backend Setup
 
+⚠️ **VERY IMPORTANT SET THESE ENVIRONMENT VARIABLES FOR SAFETY**
+```powershell
+
+# GENERATE USING COMMAND -> openssl rand -hex 128
+
+DB_PWD=
+JWT_SEC=
+```
+
+
 ```powershell
 cd backend
 
